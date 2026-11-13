@@ -1,0 +1,156 @@
+from playwright.sync_api import sync_playwright
+import os, json, datetime, re
+from pathlib import Path
+HERE=Path(__file__).resolve().parent; OUT=HERE/'out'; OUT.mkdir(exist_ok=True)
+URL=''+__import__('pathlib').Path(__file__).resolve().parents[1].joinpath('index.html').as_uri()+''
+R=[]
+def ok(n,c,extra=""): R.append(("PASS" if c else "FAIL")+"  "+n+(("  ["+str(extra)+"]") if (not c and extra!="") else ""))
+TZ=datetime.timezone(datetime.timedelta(hours=8))
+def at(m,d,h=10): return datetime.datetime(2026,m,d,h,0,tzinfo=TZ)
+with sync_playwright() as p:
+    b=p.chromium.launch()
+    ctx=b.new_context(viewport={'width':390,'height':844},device_scale_factor=2,timezone_id='Asia/Taipei',accept_downloads=True)
+    pg=ctx.new_page(); errs=[]; pg.on('pageerror',lambda e:errs.append(str(e)))
+    pg.clock.install(time=at(10,20))
+    pg.goto(URL); pg.evaluate("localStorage.clear()"); pg.wait_for_timeout(500); pg.reload(); pg.wait_for_timeout(300)
+    if pg.locator('#sheet.show').count(): pg.click('#sheet [data-act=close]')
+    st=lambda: pg.evaluate("JSON.parse(localStorage.getItem('lifebox_v1'))")
+    bks=lambda: pg.evaluate("JSON.parse(localStorage.getItem('lifebox_v1_backups')||'[]')")
+    def hubgo(k): pg.click('[data-tab=home]'); pg.click(f'.row[data-ghub={k}]')
+    s=st(); ok("新資料版本 5，財務／第二大腦／獎勵／設定都建立", s['schemaVersion']==5 and s['fin']=={"accounts":[],"tx":[],"budgets":[],"savings":[]} and s['knowledge']==[] and 'rules' in s['reward'] and 'home' in s['settings'])
+    # ===== 上個月：存一筆韓國餐廳（給搜尋測試用） =====
+    hubgo('kb'); pg.click('#kNew'); pg.fill('#kTitle','首爾烤肉餐廳'); pg.fill('#kContent','弘大附近，排隊要早點去 #韓國 #餐廳')
+    ok("第二大腦依內容自動建議類型（旅遊）", pg.input_value('#kType')=="旅遊")
+    pg.set_input_files('#kFile',str(HERE/'fixtures'/'photo.png')); pg.click('[data-pact=kSave]'); pg.wait_for_timeout(400)
+    k=st()['knowledge'][0]
+    ok("知識存檔：標籤 #韓國 #餐廳、附 1 張圖", set(k['tags'])=={"韓國","餐廳"} and len(k['files'])==1 and k['files'][0]['mime']=="image/png")
+    ok("圖片實際存進 IndexedDB", pg.evaluate("FileStore.get('%s').then(b=>!!b&&b.size>0)"%k['files'][0]['id']))
+    pg.wait_for_timeout(300)
+    ok("清單顯示縮圖", pg.evaluate("[...document.querySelectorAll('.kthumb')].some(i=>i.src.startsWith('data:image'))"))
+    pg.screenshot(path=str(OUT/'kb.png'),full_page=True)
+    # 記帳（上個月）
+    hubgo('fin'); pg.click('.seg [data-v=acc]')
+    pg.fill('#faName','現金'); pg.fill('#faInit','2000'); pg.click('#fAddAcc')
+    pg.fill('#faName','郵局'); pg.select_option('#faType','銀行'); pg.fill('#faInit','50000'); pg.click('#fAddAcc')
+    ok("新增 2 個帳戶", len(st()['fin']['accounts'])==2)
+    def tx(typ,amt,cat=None,acc=0,to=None,note="",date=None):
+        pg.click('.seg [data-v=tx]'); pg.click('#fNewTx'); pg.click(f'[data-txt={typ}]'); pg.fill('#txAmt',str(amt))
+        if cat: pg.select_option('#txCat',cat)
+        pg.select_option('#txAcc',index=acc)
+        if to is not None: pg.select_option('#txTo',index=to)
+        if note: pg.fill('#txNote',note)
+        if date: pg.fill('#txDate',date)
+        pg.click('[data-pact=txSave]')
+    tx("expense",1200,"餐飲",0,note="烤肉")
+    pg.clock.set_system_time(at(11,13)); pg.clock.run_for(61000)
+    # ===== 本月 =====
+    tx("income",42000,"薪資",1); tx("expense",3500,"購物",1,note="衣服"); tx("expense",800,"餐飲",0); tx("transfer",1000,acc=1,to=0)
+    s=st(); acc={a['name']:a for a in s['fin']['accounts']}
+    bal=pg.evaluate("S.fin.accounts.map(a=>[a.name,Fin.balance(a)])")
+    ok("帳戶餘額正確：現金 2000-1200-800+1000=1000、郵局 50000+42000-3500-1000=87500", dict(bal)=={"現金":1000,"郵局":87500}, bal)
+    pg.click('.seg [data-v=overview]')
+    txt=pg.inner_text('#app')
+    ok("本月總覽：收入 NT$ 42,000、支出 NT$ 4,300（轉帳不計）", "42,000" in txt and "4,300" in txt and "收入（NT$）" in txt, txt[:300])
+    ok("支出分類長條（購物在最前）", pg.locator('.hbar').first.inner_text().startswith("購物"))
+    ok("近 6 個月圖：有圖例、每月兩根柱、可展開數字表", pg.locator('.legend').count()==1 and pg.locator('.vb').count()==12 and pg.locator('details.tbl tr').count()==7)
+    ok("財務觀察標示為規則整理", "依規則整理" in txt and "比上個月" in txt)
+    pg.click('.seg [data-v=budget]'); pg.fill('[data-fbud="購物"]','3000'); pg.locator('[data-fbud="購物"]').dispatch_event('change')
+    ok("設定購物預算 3000，顯示已超過", "已超過" in pg.inner_text('#app'))
+    pg.click('.seg [data-v=overview]'); ok("觀察提到購物超過預算", "「購物」已超過預算" in pg.inner_text('#app'))
+    pg.screenshot(path=str(OUT/'fin.png'),full_page=True)
+    pg.click('.seg [data-v=save]'); pg.click('#fNewSave'); pg.fill('#svTitle','旅遊基金'); pg.fill('#svTarget','5000'); pg.click('[data-pact=svSave]')
+    sid=st()['fin']['savings'][0]['id']; pg.fill(f'[data-fsin="{sid}"]','5000'); pg.click(f'[data-fsdep="{sid}"]')
+    ok("儲蓄存入 5000 → 100% 已達成，並獲得「存錢成功」徽章", "已達成" in pg.inner_text('#app') and 'save-1' in st()['reward']['badges'])
+    pg.click('.seg [data-v=tx]'); pg.locator('[data-ftx]').first.click(); pg.click('[data-pact=txDel]')
+    ok("刪除一筆記帳", len(st()['fin']['tx'])==4)
+    # ===== 獎勵 =====
+    pts=lambda: pg.evaluate("Reward.balance()")
+    p0=pts()
+    pg.click('[data-tab=todo]'); pg.click('#fab'); pg.fill('#qTitle','整理房間'); pg.click('[data-act=quickSave]')
+    pg.locator('#app [data-chk]').first.click(); pg.wait_for_timeout(200)
+    ok("完成任務 +10 點", pts()==p0+10, (p0,pts()))
+    pg.click('[data-dv=done]'); pg.locator('#app [data-chk]').first.click()
+    ok("取消完成不扣點", pts()==p0+10)
+    pg.click('[data-dv=today]'); pg.locator('#app [data-chk]').first.click()
+    ok("再完成一次不會重複給點", pts()==p0+10)
+    hubgo('reward'); pg.screenshot(path=str(OUT/'reward.png'),full_page=True)
+    ok("Lv.1 時「香檳星光」裝飾是鎖住的", pg.locator('[data-dpick=star]').is_disabled())
+    pg.fill('#rwTitle','喝一杯手搖'); pg.fill('#rwCost','10'); pg.click('#rwAdd')
+    b0=pts(); pg.click("[data-rwget]"); pg.click('[data-opt="0"]')
+    ok("兌換獎勵扣除可用點數 10，經驗值不變", pts()==b0-10 and len(st()['reward']['redemptions'])==1)
+    pg.locator('details.tbl summary').last.click(); pg.fill('[data-rule=task]','15'); pg.locator('[data-rule=task]').dispatch_event('change')
+    p1=pts(); pg.click('[data-tab=todo]'); pg.click('#fab'); pg.fill('#qTitle','回信'); pg.click('[data-act=quickSave]'); pg.locator('#app [data-chk]').last.click()
+    ok("修改規則後，新完成的任務 +15", pts()==p1+15)
+    ok("有徽章「第一步」", 'first-task' in st()['reward']['badges'])
+    # ===== 搜尋 =====
+    pg.click('#btnSearch'); pg.fill('#gSearch','幫我找上個月去韓國存的餐廳'); pg.wait_for_timeout(200)
+    res=pg.inner_text('#searchRes')
+    ok("自然語句搜尋「上個月去韓國存的餐廳」找到首爾烤肉餐廳", "首爾烤肉餐廳" in res and "10/1" in res, res[:200])
+    pg.fill('#gSearch','本月 支出'); pg.wait_for_timeout(200)
+    ok("「本月 支出」找到本月記帳、沒有上個月的", pg.locator('.sres').count()>=2 and "烤肉" not in pg.inner_text('#searchRes'))
+    pg.fill('#gSearch','房間'); pg.wait_for_timeout(200); pg.locator('.sres').first.click()
+    ok("點搜尋結果開啟任務編輯", pg.locator('#eTitle').count()==1 and pg.input_value('#eTitle')=="整理房間"); pg.click('[data-act=close]')
+    # ===== 早晨：最想完成 =====
+    pg.click('[data-tab=todo]')
+    for n in ["寫腳本","剪影片","繳電費"]:
+        pg.click('#fab'); pg.fill('#qTitle',n); pg.click('[data-act=quickSave]')
+    pg.click('[data-tab=plan]'); pg.click('[data-e="1"]'); pg.click('[data-m="疲累"]')
+    fid=[t['id'] for t in st()['todos'] if t['title']=="剪影片"][0]
+    pg.click(f'[data-fav="{fid}"]'); pg.click('#btnPlan')
+    pl=[x for x in st()['plans'] if x['date']=="2026-11-13"][0]
+    ok("早晨選的「最想完成」一定排進今日建議", fid in pl['picks'] and pl['favs']==[fid])
+    # ===== 首頁：提醒與自訂 =====
+    tid=[t['id'] for t in st()['todos'] if t['title']=="繳電費"][0]
+    pg.evaluate(f"Tasks.update('{tid}',{{dueDate:'2026-11-10'}}); save();")
+    pg.click('[data-tab=home]')
+    ok("首頁提醒：逾期任務", "超過截止日" in pg.inner_text('#app'))
+    pg.locator('[data-ndis=overdue]').click()
+    ok("關掉提醒後今天不再出現", "超過截止日" not in pg.inner_text('#app'))
+    for d in ["11/10","11/11","11/12"]:
+        m,dd=map(int,d.split("/")); pg.evaluate(f"S.moodRecords.push({{id:uid(),date:'2026-{m:02d}-{dd:02d}',mood:'疲累',energy:2,note:'',at:Date.now()}}); save();")
+    pg.click('[data-tab=todo]'); pg.click('[data-tab=home]')
+    ok("連續低落／疲累 → 溫柔關心", pg.locator('.nrow.care').count()==1)
+    pg.click('#homeEdit'); pg.locator('[data-hmod=finance]').check(); pg.locator('[data-hmod=quote]').uncheck(); pg.click('[data-hmv="todo|-1"]'); pg.click('[data-act=close]')
+    secs=[x.inner_text().split("\n")[0].strip() for x in pg.locator('#app .sec').all()]
+    ok("自訂首頁：隱藏語錄、顯示本月財務、待辦往上移", not any("肯定語" in x for x in secs) and "💳 本月財務" in secs and secs.index("✅ 今天的待辦")<secs.index("🗓️ 今日建議"), secs)
+    pg.wait_for_timeout(1200); pg.reload(); pg.wait_for_timeout(300)
+    secs2=[x.inner_text().split("\n")[0].strip() for x in pg.locator('#app .sec').all()]
+    ok("首頁設定重新整理後保留", secs2==secs, (secs,secs2))
+    pg.screenshot(path=str(OUT/'home3.png'),full_page=True)
+    # ===== 週報月報 =====
+    hubgo('report'); txt=pg.inner_text('#app')
+    ok("每週報告：有完成率、生活平衡、心情、建議（標示規則）", "任務完成率" in txt and "生活平衡" in txt and "疲累" in txt and "依規則整理" in txt)
+    pg.click('.seg [data-v=month]'); txt=pg.inner_text('#app')
+    ok("每月報告：顯示 2026 年 11 月與收支", "2026 年 11 月" in txt and "NT$ 42,000" in txt)
+    pg.click('[data-rp="-1"]'); ok("可以看上個月（10 月）", "2026 年 10 月" in pg.inner_text('#app'))
+    pg.screenshot(path=str(OUT/'report.png'),full_page=True)
+    # ===== 收集頁：檔案輸入 =====
+    pg.click('[data-tab=collect]'); pg.fill('#captureInput','京都住宿 #旅遊'); pg.set_input_files('#collectFiles',str(HERE/'fixtures'/'plan.txt'))
+    ok("收集頁附加文件 → 開啟第二大腦並帶入", pg.input_value('#kTitle')=="plan" and pg.input_value('#kType')=="旅遊")
+    pg.click('[data-pact=kSave]'); pg.wait_for_timeout(300)
+    ok("文件存進第二大腦", any(k['files'] and k['files'][0]['name']=="plan.txt" for k in st()['knowledge']))
+    sr=pg.evaluate("!!(window.SpeechRecognition||window.webkitSpeechRecognition)")
+    ok("語音按鈕只在瀏覽器支援時出現", (pg.locator('#btnVoice').count()==1)==sr)
+    # ===== 自動備份、匯出含檔案、取代匯入還原檔案 =====
+    daily=[x for x in bks() if x['reason']=="每日自動備份"]
+    ok("每日自動備份（今天 1 份）", len(daily)>=1)
+    pg.clock.set_system_time(at(11,14)); pg.clock.run_for(61000); pg.wait_for_timeout(1000); pg.reload(); pg.wait_for_timeout(300)
+    ok("隔天打開再備份一份", len([x for x in bks() if x['reason']=="每日自動備份"])==len(daily)+1)
+    pg.click('#btnSettings')
+    with pg.expect_download() as dl: pg.click('[data-act=export]')
+    exp=json.load(open(dl.value.path(),encoding='utf-8'))
+    ok("匯出備份包含 2 個檔案與所有新資料", len(exp['files'])==2 and len(exp['data']['fin']['tx'])==4 and len(exp['data']['knowledge'])==2)
+    pg.click('[data-act=close]')
+    fids=[f['id'] for k in st()['knowledge'] for f in k['files']]
+    pg.evaluate("ids=>Promise.all(ids.map(i=>FileStore.del(i)))", fids)
+    ok("（模擬換裝置：先刪掉瀏覽器裡的檔案）", not pg.evaluate("FileStore.get('%s').then(b=>!!b)"%fids[0]))
+    pg.click('#btnSettings'); pg.set_input_files('#importFile',dl.value.path()); pg.wait_for_selector('[data-opt]'); pg.click('[data-opt="1"]'); pg.wait_for_timeout(800)
+    ok("匯入「取代」後，圖片與文件都還原", all(pg.evaluate("FileStore.get('%s').then(b=>!!b)"%i) for i in fids))
+    ok("匯入後點數紀錄沒有重複", len(st()['reward']['ledger'])==len({x['key'] for x in st()['reward']['ledger']}))
+    # ===== 畫面 =====
+    for k in ["fin","kb","report","reward"]:
+        hubgo(k); ow=pg.evaluate("document.documentElement.scrollWidth-window.innerWidth"); ok(f"{k} 頁沒有左右溢出", ow<=0, ow)
+    pg.click('[data-tab=home]'); ow=pg.evaluate("document.documentElement.scrollWidth-window.innerWidth"); ok("首頁沒有左右溢出", ow<=0, ow)
+    tb=pg.locator('.topbar').bounding_box(); ok("頂部列在 390 寬度內", tb['width']<=390)
+    ok("沒有 JavaScript 錯誤", not errs, errs)
+print("\n".join(R)); print(sum(r.startswith("PASS") for r in R),"/",len(R))
