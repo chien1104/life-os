@@ -238,6 +238,9 @@ button.txt:focus-visible{outline:2px solid var(--champagne);border-radius:6px}
 .tag.roll{background:var(--sage-soft);color:var(--sage-ink)}
 .mini{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--coffee-soft);flex:1;min-width:150px}
 .mini input{padding:7px 10px;font-size:14px;border-radius:12px;min-height:0}
+.meta.form .mini{flex:1 1 100%;min-width:0}
+.meta.form .mini input{flex:1;min-width:0}
+.meta.form select{flex:1 1 40%;min-width:0}
 .fld{display:flex;flex-direction:column;gap:6px}
 .fld span{font-size:12.5px;color:var(--coffee-soft)}
 input[type=date]{min-height:46px}
@@ -464,10 +467,10 @@ button.scard:active{transform:scale(.98)} button.scard:hover{background:rgba(255
 .affbig .hrow{justify-content:center}
 /* 三張牌 */
 .spread3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
-.mini{text-align:center;border-radius:16px;padding:14px 6px;background:linear-gradient(170deg,#4a3c70,#2b2342);border:1px solid rgba(227,197,141,.45);display:flex;flex-direction:column;gap:6px;min-width:0}
-.mini em{font-style:normal;font-size:11px;color:var(--ssoft)}
-.mini b{font-family:var(--font-title);color:var(--sgold);font-size:15px;word-break:break-all}
-.mini span{font-size:11px;color:var(--ssoft)}
+.spread3 .mini{text-align:center;border-radius:16px;padding:14px 6px;background:linear-gradient(170deg,#4a3c70,#2b2342);border:1px solid rgba(227,197,141,.45);display:flex;flex-direction:column;gap:6px;min-width:0}
+.spread3 .mini em{font-style:normal;font-size:11px;color:var(--ssoft)}
+.spread3 .mini b{font-family:var(--font-title);color:var(--sgold);font-size:15px;word-break:break-all}
+.spread3 .mini span{font-size:11px;color:var(--ssoft)}
 /* 願望 */
 .wcard{display:flex!important;gap:12px;align-items:flex-start}
 .wthumb{width:62px;height:62px;border-radius:14px;object-fit:cover;flex-shrink:0;display:grid;place-items:center;font-size:26px}
@@ -547,7 +550,7 @@ button.scard:active{transform:scale(.98)} button.scard:hover{background:rgba(255
 input[type=date],input[type=time]{min-width:0;max-width:100%;display:block;-webkit-appearance:none;appearance:none;text-align:left}
 input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and-time-value{text-align:left}
 .starwrap .hrow select{flex:1;min-width:0}
-.mini b{overflow-wrap:anywhere;word-break:normal}
+.spread3 .mini b{overflow-wrap:anywhere;word-break:normal}
 @media (prefers-reduced-motion:reduce){.flipin,.shake div{animation:none}.undo{transition:none}}
 @media (prefers-reduced-motion:reduce){.pointpop.show{animation:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.deck .in,.toast,.btn,.card.tap,.progress span{transition:none}}
