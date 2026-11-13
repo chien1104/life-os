@@ -1,7 +1,7 @@
 /* 🌻芊的工具檯：離線使用
    - 只快取 App 本身的檔案（頁面、圖示、字型），不碰使用者資料（localStorage / IndexedDB）。
    - 有網路時一律先抓最新版，抓不到才用快取，所以改版會直接生效。 */
-const CACHE = "qian-tools-v2";
+const CACHE = "qian-tools-v3";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png"];
 
 self.addEventListener("install", e => {

@@ -7,7 +7,8 @@ R=[]
 def ok(n,c,extra=""): R.append(("PASS" if c else "FAIL")+"  "+n+(("  ["+str(extra)[:300]+"]") if (not c and extra!="") else ""))
 TZ=datetime.timezone(datetime.timedelta(hours=8))
 T0=datetime.datetime(2026,11,13,9,0,tzinfo=TZ)
-v4={"schemaVersion":4,"todos":[{"id":"t1","title":"剪影片","text":"剪影片","category":"內容創作","cat":"內容創作","priority":"高","pri":"高","scheduledDate":"2026-11-13","dueDate":None,"createdAt":1,"created":1,"completedAt":None,"status":"open","done":False,"sortOrder":1,"rolloverCount":0,"rolloverHistory":[],"updatedAt":1,"mins":60,"description":""}],
+v4={"schemaVersion":4,"todos":[{"id":"t1","title":"剪影片","text":"剪影片","category":"內容創作","cat":"內容創作","priority":"高","pri":"高","scheduledDate":"2026-11-13","dueDate":None,"createdAt":1,"created":1,"completedAt":None,"status":"open","done":False,"sortOrder":1,"rolloverCount":0,"rolloverHistory":[],"updatedAt":1,"mins":60,"description":""},
+  {"id":"t2","title":"招募新夥伴","text":"招募新夥伴","category":"事業","cat":"事業","priority":"中","pri":"中","scheduledDate":"2026-11-13","dueDate":None,"createdAt":2,"created":2,"completedAt":None,"status":"open","done":False,"sortOrder":2,"rolloverCount":0,"rolloverHistory":[],"updatedAt":2,"mins":30,"description":""}],
   "results":[],"plans":[],"cards":[{"date":"2026-11-01","level":"大吉"}],"draft":"","lastRolloverDate":"2026-11-13",
   "wishlist":[{"id":"w1","title":"去京都看紅葉","type":"旅遊","status":"want","priority":"中","budget":30000,"note":"秋天","createdAt":5},
               {"id":"w2","title":"買相機","type":"購物","status":"done","priority":"高","budget":20000,"doneDate":"2026-10-01","actualCost":18000,"createdAt":6}],
@@ -30,7 +31,7 @@ with sync_playwright() as p:
     pg.evaluate("Store.save && save()")
     ok("損壞資料：操作後仍不寫入", pg.evaluate("localStorage.getItem('lifebox_v1')")=="{壞掉的資料")
     pg.click('[data-lockopen]'); pg.click('#sheet [data-opt="2"]'); pg.click('#sheet [data-opt="0"]')
-    ok("確認「重新開始」後才寫入新資料", st(pg) and st(pg)['schemaVersion']==5 and pg.locator('.lockbar').count()==0)
+    ok("確認「重新開始」後才寫入新資料", st(pg) and st(pg)['schemaVersion']==6 and pg.locator('.lockbar').count()==0)
     ok("損壞情境沒有程式錯誤", not errs, errs); ctx.close()
     # ===== P0：升級前備份失敗 =====
     ctx=b.new_context(viewport={'width':390,'height':844},timezone_id='Asia/Taipei'); pg=ctx.new_page(); pg.clock.install(time=T0)
@@ -42,8 +43,12 @@ with sync_playwright() as p:
     # ===== 正常升級 v4 → v5 =====
     ctx,pg,errs=fresh(b,v4)
     s=st(pg)
-    ok("升級到版本 5，原資料完整保留", s['schemaVersion']==5 and len(s['todos'])==1 and len(s['wishlist'])==2 and s['cards']==v4['cards'])
-    ok("升級前備份，原因寫明版本 4 → 5", any("版本 4 → 5" in x['reason'] and json.loads(x['data'])['schemaVersion']==4 for x in bks(pg)))
+    ok("升級到版本 6，原資料完整保留", s['schemaVersion']==6 and len(s['todos'])==2 and len(s['wishlist'])==2 and s['cards']==v4['cards'])
+    ok("「事業」任務合併到「工作與事業」，其他內容不變", [t['category'] for t in s['todos']]==["內容創作","工作與事業"] and s['todos'][1]['title']=="招募新夥伴" and s['todos'][1]['cat']=="工作與事業")
+    cls=pg.evaluate("['下單可可奶茶','週末跟朋友聚餐','陪媽媽看醫生回家','開會準備提案','預約牙醫'].map(x=>Parser.classify(x).cat)")
+    ok("新區塊自動分類：購物、朋友、家人、工作與事業", cls[:4]==["購物","朋友","家人","工作與事業"], cls)
+    ok("待辦區塊共 8 個（工作與事業、購物、朋友、家人）", pg.evaluate("CATS.join()")=="工作與事業,內容創作,財務,學習,生活,購物,朋友,家人")
+    ok("升級前備份，原因寫明版本 4 → 6", any("版本 4 → 6" in x['reason'] and json.loads(x['data'])['schemaVersion']==4 for x in bks(pg)))
     ok("建立 star 資料區與個人亂數種子", isinstance(s['star']['draws'],list) and len(s['star']['profile']['seed'])>4)
     w1,w2=s['wishlist']
     ok("舊願望補上顯化欄位（分類對應）", w1['category']=="travel" and w1['mstatus']=="manifesting" and w1['desc']=="秋天" and w1['budget']==30000)
@@ -59,8 +64,8 @@ with sync_playwright() as p:
     pg.click('[data-tab=todo]'); pg.wait_for_timeout(100)
     if pg.locator('[data-del]').count():
         pg.locator('[data-del]').first.click()
-        ok("刪除待辦後出現「復原」", pg.locator('#undo.show').count()==1 and len(st(pg)['todos'])==0)
-        pg.click('#undoBtn'); ok("按復原，待辦完整回來", len(st(pg)['todos'])==1 and st(pg)['todos'][0]['title']=="剪影片")
+        ok("刪除待辦後出現「復原」", pg.locator('#undo.show').count()==1 and len(st(pg)['todos'])==1)
+        pg.click('#undoBtn'); ok("按復原，待辦完整回來", len(st(pg)['todos'])==2 and sorted(t['title'] for t in st(pg)['todos'])==sorted(['剪影片','招募新夥伴']))
     else: ok("刪除按鈕存在", False)
     # ===== 星光秘境 =====
     pg.click('[data-tab=card]')

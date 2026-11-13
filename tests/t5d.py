@@ -20,7 +20,7 @@ with sync_playwright() as p:
     st=lambda: pg.evaluate("JSON.parse(localStorage.getItem('lifebox_v1'))")
     bks=lambda: pg.evaluate("JSON.parse(localStorage.getItem('lifebox_v1_backups')||'[]')")
     s=st()
-    ok("第一階段資料升級到版本 5，待辦完整保留", s['schemaVersion']==5 and len(s['todos'])==2 and s['todos'][0]['sortOrder']==1)
+    ok("第一階段資料升級到版本 6，待辦完整保留", s['schemaVersion']==6 and len(s['todos'])==2 and s['todos'][0]['sortOrder']==1)
     ok("升級前自動備份第一階段資料", len([b for b in bks() if '升級' in b['reason']])==1 and json.loads([b for b in bks() if '升級' in b['reason']][0]['data'])['schemaVersion']==2)
     ok("新增的資料區都建立好（空的）", all(isinstance(s.get(k),list) for k in ["habits","habitRecords","moodRecords","journalEntries","reviews","goals","wishlist"]) and s['personalProfile']=={"entries":[]})
     ok("底部導覽維持 5 個（成長已合併到首頁）", [x.inner_text().strip().split(chr(10))[0] for x in pg.locator('#tabbar button').all()]==["今日","收集","待辦","安排","星光秘境"], [x.inner_text().strip() for x in pg.locator('#tabbar button').all()])

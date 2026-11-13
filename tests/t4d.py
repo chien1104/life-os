@@ -29,7 +29,7 @@ with sync_playwright() as p:
     ok("舊資料完整讀取（3 件待辦、1 整理、1 建議、1 抽卡、草稿）", len(s['todos'])==3 and len(s['results'])==1 and len(s['plans'])==1 and len(s['cards'])==1 and s['draft']=="舊草稿")
     ups=lambda: [b for b in bks() if '升級' in b['reason']]
     ok("升級前自動備份原始資料", len(ups())==1 and json.loads(ups()[0]['data'])==old)
-    ok("資料版本標記為 5", s.get('schemaVersion')==5)
+    ok("資料版本標記為 5", s.get('schemaVersion')==6)
     ok("舊欄位保留（text/cat/pri/done/created）", all(k in t['a1'] for k in ['text','cat','pri','done','created']))
     ok("新欄位補齊（title/category/priority/scheduledDate/dueDate/createdAt/status/sortOrder/rolloverCount/rolloverHistory/updatedAt）", all(k in t['a1'] for k in ['title','category','priority','scheduledDate','dueDate','createdAt','completedAt','status','sortOrder','rolloverCount','rolloverHistory','updatedAt','description']))
     ok("舊任務安排在今天、建立時間不變", t['a1']['scheduledDate']=="2026-11-13" and t['a1']['createdAt']==1)
@@ -134,7 +134,7 @@ with sync_playwright() as p:
     pg.click('#btnSettings')
     with pg.expect_download() as dl: pg.click('[data-act=export]')
     path=dl.value.path(); exp=json.load(open(path,encoding='utf-8'))
-    ok("匯出備份檔內容完整", len(exp['data']['todos'])==len(st()['todos']) and exp['schemaVersion']==5, dl.value.suggested_filename)
+    ok("匯出備份檔內容完整", len(exp['data']['todos'])==len(st()['todos']) and exp['schemaVersion']==6, dl.value.suggested_filename)
     pg.screenshot(path=str(OUT/'settings.png'))
     n=len(st()['todos'])
     pg.set_input_files('#importFile',path); pg.wait_for_selector('[data-opt]'); pg.click('[data-opt="0"]')
