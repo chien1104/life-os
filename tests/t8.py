@@ -86,7 +86,7 @@ with sync_playwright() as p:
     pg.click('.sback'); pg.click('.stool[data-sp=spread]'); pg.fill('#sprQ','工作方向'); pg.click('[data-sprdraw]')
     sp=[x for x in st(pg)['star']['draws'] if x['tool']=="spread"]
     ok("三張牌：三張不重複、保存問題", len(sp)==1 and len(set(c['cardId'] for c in sp[0]['cards']))==3 and sp[0]['question']=="工作方向")
-    ok("三張牌：標示整體統整不是 AI", "不是 AI" in pg.inner_text('#app'))
+    ok("三張牌：標示整體統整依固定規則", "依固定規則" in pg.inner_text('#app') and "AI" not in pg.inner_text('#app'))
     # 肯定語
     pg.click('.sback'); pg.click('.stool[data-sp=affirm]'); pg.click('[data-afav]>>nth=0')
     ok("肯定語可收藏", any(x['fav'] for x in st(pg)['star']['affirmations']))

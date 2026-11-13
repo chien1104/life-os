@@ -10,7 +10,8 @@
 ## 1. 目前狀態
 
 - **App 檔案**：`index.html`，單一檔案，約 390 KB，資料格式 schemaVersion 5。
-- **測試**：`tests/` 5 組共 253 項，全部通過（t4d 57、t5d 54、t6e 50、t7b 44、t8 48）。
+- **測試**：`tests/` 5 組共 221 項，全部通過（t4d 57、t5d 54、t6e 50、t7b 12、t8 48）。
+- **AI 與雲端同步已完全移除**（2026-11-14 使用者決定）。舊資料裡的 aiNote 會以「回顧筆記」顯示。
 - **Claude 裡的版本**：https://claude.ai/artifact/R3kpUvzFJW5SC8on7CLMkd（只有擁有者登入後能看）。
 - **Netlify 網址**：https://reliable-maamoul-35d9c3.netlify.app
   - 上次檢查時回應 401（要求登入 Netlify），代表網站還沒認領或開了訪客保護。

@@ -351,7 +351,7 @@ body[data-deco="star"] .hero{background:radial-gradient(circle at 85% 20%,rgba(2
 
 /* ===== AI 與首頁合併 ===== */
 .aibtn svg.i{color:var(--gold)}
-.btn#btnAIOrganize{background:linear-gradient(180deg,#c7a57a,var(--gold))}
+
 .aicard{background:linear-gradient(135deg,#fbf4ea,#fffdf9);border-color:var(--champagne)}
 .aicard .qk{display:flex;align-items:center;gap:6px;font-size:12px;letter-spacing:.15em;color:var(--gold);font-weight:600;margin-bottom:8px}
 .aicard .qk svg.i{width:15px;height:15px}
@@ -1088,7 +1088,7 @@ function viewCollect(){
       <p class="lbl">一行寫一件事，也可以用頓號隔開</p>
       <textarea id="captureInput" aria-label="輸入想法" placeholder="例如：&#10;明天買生活用品、星期五剪影片&#10;月底繳信用卡&#10;找時間整理房間"></textarea>
       <div class="draftnote" id="draftNote">${S.draft?ic("check")+"已自動暫存草稿":""}</div>
-      <div class="hrow" style="margin-top:12px"><button class="btn" id="btnOrganize" style="flex:1">${ic("leaf")}整理</button>${AI.ok?`<button class="btn" id="btnAIOrganize" style="flex:1">${ic("spark")}AI 整理</button>`:""}<button class="btn ghost" id="btnClear">清空</button></div>
+      <div class="hrow" style="margin-top:12px"><button class="btn" id="btnOrganize" style="flex:1">${ic("leaf")}整理</button><button class="btn ghost" id="btnClear">清空</button></div>
       <div class="hrow" style="margin-top:10px">
         ${(window.SpeechRecognition||window.webkitSpeechRecognition)?`<button class="btn small ghost" id="btnVoice">${ic("mic")}語音輸入</button>`:""}
         <label class="btn small ghost">${ic("clip")}圖片或文件<input type="file" id="collectFiles" multiple hidden></label>
@@ -1097,11 +1097,11 @@ function viewCollect(){
   } else {
     const r=S.results;
     inner = r.length ? `<div class="card">
-      <p class="hint" style="margin:0 0 12px">分類與日期是${r.some(x=>x.ai)?"AI 或規則":"依文字規則"}判斷的，判斷不出來的先放今天，請確認後再加入。</p>
+      <p class="hint" style="margin:0 0 12px">分類與日期是依文字規則判斷的，判斷不出來的先放今天，請確認後再加入。</p>
       <div class="list">${r.map(x=>`
       <div class="item rcard">
         <span class="pri ${x.pri}">${x.pri}</span>
-        <span class="txt">${esc(x.text)}${x.ai?` <span class="tag ai">${ic("spark")}AI</span>`:""}</span>
+        <span class="txt">${esc(x.text)}</span>
         <button class="del" data-rrm="${x.id}" aria-label="移除">${ic("x")}</button>
         <div class="meta form">
           <select data-rid="${x.id}" data-f="cat" aria-label="區塊">${opts(CATS,x.cat)}</select>
@@ -1190,8 +1190,7 @@ function viewPlan(){
       <div class="chips">${Tasks.bucket("today").slice(0,15).map(t=>`<button class="chip ${planFavs.has(t.id)?"on":""}" data-fav="${t.id}">${esc(t.title.length>14?t.title.slice(0,14)+"…":t.title)}</button>`).join("")}</div>`:""}
       <button class="btn full" id="btnPlan" style="margin-top:16px">${ic("leaf")}${p?"重新挑選今日建議":"挑選今日建議"}</button>
       <p class="hint">會從今天的 ${n} 件待辦中，挑出適合今天狀態的份量。不排時間表，順序照你在待辦裡排的。</p>
-      ${AI.ok?`<button class="btn ghost full aibtn" id="btnAIPlan" style="margin-top:10px">${ic("spark")}AI 早晨關心與建議</button>`:""}
-    </div>${aiCard("plan","AI 早晨建議")}${p?planCard(p):""}`;
+    </div>${p?planCard(p):""}`;
   } else {
     const past=S.plans.filter(x=>x.date!==D.today()).sort((a,b)=>b.date.localeCompare(a.date));
     inner = past.length ? `<div class="card menu">${past.map(x=>`
@@ -1295,7 +1294,6 @@ const Sheet = {
         ${hist.length?`<ul>${hist.slice(0,10).map(h=>`<li>${D.short(h.from)} → ${D.short(h.to)}（${h.days} 天）</li>`).join("")}</ul>`:""}
       </div>
       <div class="hrow" style="margin-top:16px"><button class="btn" data-act="editSave" data-id="${t.id}" style="flex:1">儲存</button><button class="btn ghost" data-act="close">取消</button></div>
-      ${AI.ok&&!done?`<button class="btn ghost full aibtn" data-aisplit="${t.id}" style="margin-top:10px">${ic("spark")}AI 幫我拆成小步驟</button>`:""}
       <button class="btn ghost full" data-act="editDelete" data-id="${t.id}" style="margin-top:10px;color:var(--rose-ink)">${ic("x")}刪除這個任務</button>`);
   },
   /* 資料與備份 */
@@ -1311,14 +1309,6 @@ const Sheet = {
       </div>
       <div class="sec" style="margin-top:22px">本機自動備份 <span>最多保留 8 份，含每日自動備份</span></div>
       ${bks.length?`<div class="list">${bks.map(b=>`<div class="item"><span class="txt" style="font-size:13.5px">${esc(b.reason)}<br><span class="muted">${D.time(b.at)}</span></span><button class="btn small ghost" data-act="restore" data-id="${b.id}">${ic("restore")}還原</button></div>`).join("")}</div>`:`<div class="empty" style="padding:12px 0">還沒有自動備份。升級資料格式、匯入或還原前，系統會自動備份一份。</div>`}
-      <div class="sec" style="margin-top:22px">AI 與雲端同步</div>
-      <div class="card" style="padding:14px 16px;margin:0">
-        <div class="hrow" style="justify-content:space-between"><span>${ic("spark")} AI</span><span class="pill">${AI.ok?"可以使用":"這裡無法使用"}</span></div>
-        <p class="hint" style="margin:6px 0 10px">${AI.ok?"使用你自己的 Claude 帳號。AI 只會收到該功能需要的資料，所有變更都要你確認。":"在 Claude 裡開啟這個頁面才能使用 AI；下載的檔案版本沒有 AI。"}</p>
-        ${AI.ok?`<label class="ms" style="padding:0"><input type="checkbox" id="aiProfile" ${S.settings.aiUseProfile===false?"":"checked"}><span>讓 AI 參考「個人資料庫」</span></label>`:""}
-        <div class="hrow" style="justify-content:space-between;margin-top:12px"><span>${ic("cloud")} 雲端同步</span><span class="pill">${Cloud.ready?(Cloud.err?"同步失敗":"已開啟"):Cloud.noPerm?"只存本機":"未開啟"}</span></div>
-        <p class="hint" style="margin:6px 0 0">${Cloud.ready?`資料會同步到你的 Claude 帳號私人空間，換裝置登入就能看到${Cloud.last?`・最後同步 ${D.time(Cloud.last)}`:""}。圖片與文件只存在這台裝置。`:Cloud.noPerm?"這個分享連結沒有雲端同步權限，資料只存在這台裝置。換手機或清除瀏覽器資料前，記得先匯出備份檔。":"在 Claude 裡開啟這個頁面才會同步；下載的檔案版本只存在這台裝置。"}</p>
-      </div>
       <div class="sec" style="margin-top:22px">其他設定</div>
       <button class="btn ghost full" onclick="Sheet.welcome()" style="margin-bottom:10px">${ic("leaf")}使用說明</button>
       <div class="grid2"><button class="btn ghost" onclick="Sheet.homeEdit()">${ic("layout")}調整首頁</button><button class="btn ghost" data-ghub="reward" onclick="Sheet.close();hub='reward';tab='growth';render();">${ic("medal")}點數規則</button></div>
@@ -1744,7 +1734,7 @@ function vReview(){
       <div>完成率 ${r.rate}%（${r.completed}/${r.total}）・習慣 ${r.habitsDone}/${r.habitsTotal}${r.mood?`・心情 ${r.mood}`:""}</div>
       ${r.happy?`<div><b>開心的事：</b>${esc(r.happy)}</div>`:""}${r.thanks?`<div><b>感謝：</b>${esc(r.thanks)}</div>`:""}
       ${r.tomorrow?`<div><b>明天想完成：</b>${esc(r.tomorrow).replace(/\n/g,"、")}</div>`:""}${r.note?`<div><b>想對自己說：</b>${esc(r.note)}</div>`:""}
-      <div style="margin-top:4px">${esc(r.message)}</div>${r.aiNote?`<div style="margin-top:6px"><b>AI 回顧：</b>${fmtAI(r.aiNote)}</div>`:""}</div>`;
+      <div style="margin-top:4px">${esc(r.message)}</div>${r.aiNote?`<div style="margin-top:6px"><b>回顧筆記：</b>${esc(r.aiNote).replace(/\n/g,"<br>")}</div>`:""}</div>`;
   return hero("回頭看看，今天也有好好走過。","每日回顧") + `<div class="body">
     <div class="card">
       <div class="stats">
@@ -1765,9 +1755,6 @@ function vReview(){
     </div>
     ${rv?`<div class="card quote" style="padding:20px"><div class="qk">${ic("leaf")}TODAY'S NOTE</div><div class="qt" style="font-size:17px">${esc(rv.message)}</div>
       ${rv.tomorrow && !rv.tomorrowAdded?`<button class="btn ghost full" id="gTomorrowTasks">${ic("plus")}把「明天想完成」加入明天的待辦</button>`:rv.tomorrowAdded?`<p class="muted" style="margin:0">已加入明天的待辦</p>`:""}</div>`:""}
-    ${AI.ok?`<button class="btn ghost full aibtn" id="btnAIReview" style="margin-bottom:14px">${ic("spark")}AI 陪我回顧今天</button>`:""}
-    ${aiCard("review","AI 回顧", rv && AIout.review!==rv.aiNote ? `<button class="btn small ghost" id="btnAIReviewSave" style="margin-top:10px">存進今日回顧</button>` : "")}
-    ${!AIout.review && rv?.aiNote?`<div class="card aicard"><div class="qk">${ic("spark")}已保存的 AI 回顧</div><div class="aitext">${fmtAI(rv.aiNote)}</div></div>`:""}
     <div class="sec">過去的回顧</div>
     ${past.length?`<div class="card menu">${past.map(r=>`${menuRow("moon","","",D.label(r.date),`完成率 ${r.rate}%${r.mood?"・"+r.mood:""}`,`data-grv="${r.id}"`)}${reviewOpen===r.id?`<div style="padding:0 14px 4px">${detail(r)}</div>`:""}`).join("")}</div>`:`<div class="card"><div class="empty">還沒有過去的回顧。</div></div>`}
   </div>`;
@@ -1863,7 +1850,6 @@ Object.assign(Sheet, {
       <label class="fld"><span>原本的目標</span><input value="${esc(h.target||"（沒有設定）")}" disabled></label>
       <label class="fld" style="margin-top:10px"><span>調整成</span><input id="eaTarget" value="${esc(Habits.easierTarget(h.target))}"></label>
       <p class="hint" id="eaWhy"></p>
-      ${AI.ok?`<button class="btn small ghost aibtn" data-aieasy="${id}">${ic("spark")}請 AI 想一個更容易的版本</button>`:""}
       <div class="hrow" style="margin-top:16px"><button class="btn" data-gact="easierSave" data-id="${id}" style="flex:1">確認調整</button><button class="btn ghost" data-act="close">先不要</button></div>`);
   },
   goal(id, level){
@@ -2164,10 +2150,8 @@ function vFin(){
           <span class="vb" style="height:${x.inc/maxT*100}%;background:${COL_INC}" title="${M.short(x.m)} 收入 ${money(x.inc)||"NT$ 0"}"></span>
           <span class="vb" style="height:${x.exp/maxT*100}%;background:${COL_EXP}" title="${M.short(x.m)} 支出 ${money(x.exp)||"NT$ 0"}"></span></div><span class="vl">${M.short(x.m)}</span></div>`).join("")}</div>
         <details class="tbl"><summary>查看數字</summary><table><tr><th>月份</th><th>收入</th><th>支出</th></tr>${months.map(x=>`<tr><td>${M.short(x.m)}</td><td>${money(x.inc)||"0"}</td><td>${money(x.exp)||"0"}</td></tr>`).join("")}</table></details></div>
-      <div class="card"><p class="lbl">${ic("leaf")} 財務觀察 <span class="muted">（依規則整理，不是 AI）</span></p>
-        <ul class="ins">${Fin.insights(m).map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
-        ${AI.ok&&cur.length?`<button class="btn small ghost aibtn" id="btnAIFin" style="margin-top:10px">${ic("spark")}AI 財務分析</button>`:""}</div>
-      ${aiCard("fin-"+m,"AI 財務分析")}`;
+      <div class="card"><p class="lbl">${ic("leaf")} 財務觀察</p>
+        <ul class="ins">${Fin.insights(m).map(s=>`<li>${esc(s)}</li>`).join("")}</ul></div>`;
   } else if(sub.fin==="tx"){
     const days=[...new Set(cur.map(t=>t.date))].sort().reverse();
     inner=`<button class="btn full" id="fNewTx" style="margin-bottom:14px">${ic("plus")}記一筆</button>${monthNav}
@@ -2308,9 +2292,7 @@ function vReport(){
       ${(()=>{ const sc=(S.star.successes||[]).filter(z=>z.achievedDate>=r.start&&z.achievedDate<=r.end); return sc.length?`<li>🏆 顯化成功：${sc.map(z=>esc(z.title)).join("、")}</li>`:""; })()}
       ${x.inc||x.exp?`<li>收入 ${money(x.inc)||"NT$ 0"}・支出 ${money(x.exp)||"NT$ 0"}</li>`:""}
       ${!x.done.length&&!x.ms.length&&!x.wishes.length?`<li>這段時間比較安靜，也是一種休息。</li>`:""}</ul></div>
-    <div class="card"><p class="lbl">${ic("leaf")} ${kind==="week"?"下週":"下個月"}建議 <span class="muted">（依規則整理，不是 AI）</span></p><ul class="ins">${x.tips.map(t=>`<li>${esc(t)}</li>`).join("")}</ul></div>
-    ${AI.ok?`<button class="btn ghost full aibtn" id="btnAIReport" style="margin-bottom:14px">${ic("spark")}AI 深入分析這段時間</button>`:""}
-    ${aiCard("rpt-"+r.start,"AI 分析")}
+    <div class="card"><p class="lbl">${ic("leaf")} ${kind==="week"?"下週":"下個月"}建議</p><ul class="ins">${x.tips.map(t=>`<li>${esc(t)}</li>`).join("")}</ul></div>
   </div>`;
 }
 
@@ -2357,7 +2339,7 @@ function notices(){
   const recent=[...S.moodRecords].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
   if(recent.filter(m=>["低落","疲累","焦慮"].includes(m.mood)).length>=3 || over.length>=5) out.unshift({k:"care",care:true,t:"最近好像比較辛苦。要不要一起把待辦整理一下，把大事拆小、把不急的往後放？今天只做一件也很好。",go:"plan"});
   const hasData=S.todos.length+S.habits.length+S.fin.tx.length+S.knowledge.length+S.journalEntries.length>0;
-  if(!Cloud.ready && hasData && (!S.settings.lastExport || D.diff(S.settings.lastExport,T)>=14)) out.push({k:"export",t:"你的資料只存在這台裝置，建議匯出一份備份檔保存（右上角設定 → 匯出備份檔）。",set:true});
+  if(hasData && (!S.settings.lastExport || D.diff(S.settings.lastExport,T)>=14)) out.push({k:"export",t:"你的資料只存在這台裝置，建議匯出一份備份檔保存（右上角設定 → 匯出備份檔）。",set:true});
   const dis=(S.settings.dismissed||{})[T]||[];
   return out.filter(n=>!dis.includes(n.k));
 }
@@ -2436,7 +2418,7 @@ function renderSearch(q, parsed, byAI){
   if(!q.trim()){ box.innerHTML=`<p class="muted" style="margin:6px 2px">可以用關鍵字，也可以加上時間或類別，例如「上個月 韓國 餐廳」「本週 待辦」「11月 支出」。</p>`; return; }
   const r=searchAll(q, parsed);
   const cond=[r.range?`時間 ${D.short(r.range.start)}～${D.short(r.range.end)}`:"", r.mod?`類別：${MODNAME[r.mod]}`:"", r.words.length?`關鍵字：${r.words.join("、")}`:""].filter(Boolean).join("・");
-  box.innerHTML=`<p class="hint" style="margin:0 2px 10px">${byAI?"AI 理解為 → ":""}${cond||"沒有可用的條件"}${r.partial?"（沒有完全符合的，以下是部分符合）":""}</p>`+
+  box.innerHTML=`<p class="hint" style="margin:0 2px 10px">${cond||"沒有可用的條件"}${r.partial?"（沒有完全符合的，以下是部分符合）":""}</p>`+
     (r.res.length?`<div class="list">${r.res.map(it=>`<button class="item sres" data-sopen='${esc(JSON.stringify(it.open))}'><span class="tag">${MODNAME[it.m]}</span><span class="txt"><b>${esc(it.title)}</b><br><span class="muted">${esc(it.text.slice(0,60))}</span></span><span class="muted">${it.date?D.short(it.date):""}</span></button>`).join("")}</div>`:`<div class="empty">沒有找到相關資料。</div>`);
 }
 
@@ -2505,7 +2487,7 @@ Object.assign(Sheet, {
   },
   search(){
     Sheet.open(`<h3>${ic("search")} 搜尋全部</h3>
-      <div class="hrow" style="flex-wrap:nowrap"><input id="gSearch" placeholder="例如：上個月 韓國 餐廳" aria-label="搜尋全部資料" autocomplete="off">${AI.ok?`<button class="btn small aibtn" id="btnAISearch" style="white-space:nowrap">${ic("spark")}AI 搜尋</button>`:""}</div>
+      <div class="hrow" style="flex-wrap:nowrap"><input id="gSearch" placeholder="例如：上個月 韓國 餐廳" aria-label="搜尋全部資料" autocomplete="off"></div>
       <div id="searchRes" style="margin-top:12px"></div>`);
     renderSearch(""); setTimeout(()=>$("gSearch")?.focus(),60);
   }
@@ -2661,219 +2643,15 @@ Backup.merge=function(d){ const n=_bMerge.call(Backup,d);
 
 
 /* =====================================================================
-   15. AI 與雲端同步（只在 Claude 裡開啟時可用）
-   - AI：透過 Claude 的 sample 能力，用使用者自己的 Claude 帳號；不需要 API Key。
-         AI 只提供建議與預覽，任何資料變動都要使用者按下確認。
-   - 同步：資料另存一份到使用者在這個頁面的私人雲端空間（data/users/<id>/），
-           其他人（包含頁面擁有者）都看不到。圖片與文件仍只存在本機。
-   - 下載成單一 HTML 檔使用時，這兩項功能會自動隱藏，其餘功能照常運作。
+   15. 共用圖示與首頁合併（App 不含 AI 與雲端同步，資料只存在本機）
    ===================================================================== */
 Object.assign(P, { spark:'<path d="M12 3.5l1.6 4.9 4.9 1.6-4.9 1.6L12 16.5l-1.6-4.9L5.5 10l4.9-1.6z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>', cloud:'<path d="M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 9.1 4.75 4.75 0 0 0 7 18.5z"/>' });
-
-const AIout = {};      // AI 回覆暫存（只在畫面上，按「存進…」才寫入資料）
-const AI = {
-  s:null, ok:false,
-  async init(){
-    if(!window.claude || typeof window.claude.use!=="function") return;
-    try{ this.s=await window.claude.use("sample"); }catch(e){ this.s=null; }
-    this.ok=!!this.s; if(this.ok) render();
-  },
-  persona(){
-    return `你是「芊的工具檯」裡的生活教練。語氣溫柔、有同理心、不批評、不施壓、不說教、不製造罪惡感。` +
-      `一律使用繁體中文（台灣用語），句子簡短，給具體、馬上能做的小步驟。不要把推測當成使用者的事實。今天是 ${D.label(D.today())}。`;
-  },
-  profile(){
-    if(S.settings.aiUseProfile===false || !S.personalProfile.entries.length) return "";
-    return "\n\n使用者自己填寫的個人資料（可參考，不要過度套用）：\n" + S.personalProfile.entries.slice(0,40).map(e=>`- ${e.group}／${e.key}：${e.value}`).join("\n");
-  },
-  build(task, data, fmt){ return `${this.persona()}${this.profile()}\n\n任務：${task}\n\n資料：\n${JSON.stringify(data)}${fmt?`\n\n${fmt}`:""}`; },
-  async text(task, data, onText){ const r=await this.s(this.build(task,data), {modelTier:"default", onText}); return r.text; },
-  async json(task, data, shape, tier="default"){ return await this.s.json(this.build(task,data,`只回傳 JSON，不要其他文字。格式：${shape}`), {modelTier:tier}); },
-  err(e){
-    const c=e&&e.code;
-    if(["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"].includes(c)){ this.ok=false; render(); toast("AI 目前無法使用（沒有開啟權限）"); }
-    else if(c==="rate_limited") toast("AI 使用得比較頻繁，請稍後再試");
-    else if(c==="session_expired") toast("請重新登入 Claude");
-    else if(c==="cancelled") {}
-    else toast("AI 這次沒有回應成功，可以再試一次");
-  }
-};
-const fmtAI = t => esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/\n/g,"<br>");
-const aiBtn = (id,label,extra="") => AI.ok ? `<button class="btn small ghost aibtn" id="${id}" ${extra}>${ic("spark")}${label}</button>` : "";
-const aiCard = (key,title,saveBtn="") => AIout[key] ? `<div class="card aicard" data-aikey="${key}"><div class="qk">${ic("spark")}${title}</div><div class="aitext">${fmtAI(AIout[key])}</div>${saveBtn}<p class="hint">AI 的建議僅供參考，可能不完全正確。</p></div>` : "";
-async function aiRun(btn, fn){
-  if(!btn || btn.disabled) return;
-  const old=btn.innerHTML; btn.disabled=true; btn.innerHTML=`${ic("spark")}AI 思考中…`;
-  try{ await fn(); }catch(e){ AI.err(e); }
-  finally{ if(btn.isConnected){ btn.disabled=false; btn.innerHTML=old; } }
-}
-/* 串流顯示：先放一個佔位卡片，邊寫邊更新 */
-function streamTo(key, title){ AIout[key]="…"; render(); return ({text})=>{ AIout[key]=text; const el=document.querySelector(`[data-aikey="${key}"] .aitext`); if(el) el.innerHTML=fmtAI(text); }; }
-
-const validDate = (s, min) => D.valid(s) ? (min && s<min ? min : s) : null;
-
-/* ---------- AI 功能 ---------- */
-const AIF = {
-  /* 收集：AI 整理成任務預覽（不直接建立） */
-  async organize(text){
-    const T=D.today();
-    const r=await AI.json("把使用者隨手寫下的內容整理成一件一件的待辦任務。合併重複的事、拆開一句裡的多件事。依內容判斷分類、優先順序、安排日期與截止日期：有明確日期才填，沒有日期就安排今天；只有出現期限（例如「前」「截止」「繳」）才填截止日期。預估時間用分鐘。",
-      {今天:T, 星期:"日一二三四五六"[D.parse(T).getDay()], 可用分類:CATS, 內容:text},
-      `{"items":[{"text":"任務","cat":"工作|事業|內容創作|財務|學習|生活","pri":"高|中|低","scheduledDate":"YYYY-MM-DD","dueDate":"YYYY-MM-DD 或 null","mins":30}]}`);
-    const items=(r&&Array.isArray(r.items)?r.items:[]).filter(x=>x&&String(x.text||"").trim()).slice(0,30).map(x=>({
-      id:uid(), ai:true, text:String(x.text).trim().slice(0,200),
-      cat:CATS.includes(x.cat)?x.cat:Parser.classify(x.text).cat,
-      pri:["高","中","低"].includes(x.pri)?x.pri:"中",
-      mins:[15,30,60,90,120].includes(+x.mins)?+x.mins:Parser.mins(x.text),
-      scheduledDate:validDate(x.scheduledDate,T)||T, dueDate:validDate(x.dueDate)||null }));
-    return items;
-  },
-  /* 任務拆解：回傳小步驟，讓使用者勾選後才建立 */
-  async split(t){
-    const r=await AI.json("把這個任務拆成 3～6 個容易開始的小步驟，每步最好 30 分鐘以內，按照做的順序排列。",
-      {任務:t.title, 備註:t.description, 分類:t.category}, `{"steps":[{"title":"步驟","mins":15}]}`);
-    return (r&&Array.isArray(r.steps)?r.steps:[]).filter(s=>s&&String(s.title||"").trim()).slice(0,8).map(s=>({title:String(s.title).trim().slice(0,120), mins:[15,30,60,90,120].includes(+s.mins)?+s.mins:30}));
-  },
-  todayData(){
-    const T=D.today(), list=Tasks.bucket("today",T);
-    return {今天:T, 心情:mood, 精神:energy, 可用小時:+($("hours")?.value||4),
-      最想完成:[...planFavs].map(id=>Tasks.get(id)?.title).filter(Boolean),
-      今天的待辦:list.slice(0,30).map(t=>({事情:t.title, 優先:t.priority, 分類:t.category, 預估分鐘:t.mins, 已逾期:Tasks.isOverdue(t,T), 已順延天數:t.rolloverCount})),
-      今天還沒打卡的習慣:Habits.active().filter(h=>!Habits.isDone(h.id,T)).map(h=>h.title)};
-  }
-};
-
-/* ---------- 雲端同步（Claude 帳號的私人空間） ---------- */
-const Cloud = {
-  db:null, base:null, ready:false, busy:false, again:false, known:0, applying:false, last:null, err:null, timer:null,
-  device:(()=>{ try{ let d=LS.getItem("lifeos_device"); if(!d){ d=uid(); LS.setItem("lifeos_device",d); } return d; }catch(e){ return uid(); } })(),
-  async init(){
-    if(!window.claude || typeof window.claude.use!=="function") return;
-    try{
-      const [db,user]=await Promise.all([window.claude.use("db"), window.claude.use("user")]);
-      if(!db || !user) return;
-      const id=await user.id(); if(!id) return;
-      this.db=db; this.base="data/users/"+id; this.ready=true;
-      await this.pull(); render();
-    }catch(e){ if(!this.denied(e)) this.err=e&&e.code||"error"; }
-  },
-  ref(k){ return this.db.collection(this.base).doc(k); },
-  /* 分享連結的朋友多半只有檢視權限，Claude 不允許寫入雲端：改成只存本機，不當成錯誤 */
-  denied(e){ const c=e&&e.code; if(["invalid_argument","not_granted","revoked","capability_disabled","capability_removed"].includes(c)){ this.ready=false; this.noPerm=true; this.err=null; render(); return true; } return false; },
-  async readRemote(m){
-    const parts=[]; for(let i=0;i<m.n;i++){ const s=await this.ref(`lifeos_${m.v}_${i}`).get(); if(!s.exists) return null; parts.push(s.data().s); }
-    try{ return JSON.parse(parts.join("")); }catch(e){ return null; }
-  },
-  async adopt(m, reason){
-    const d=await this.readRemote(m); if(!d) return false;
-    if(S.todos.length||S.habits.length||S.fin.tx.length||S.knowledge.length) Store.backup(JSON.stringify(S), reason);
-    this.applying=true;
-    try{ S=Store.migrate(d); Tasks.rollover(); Store.save(); } finally{ this.applying=false; }
-    this.known=m.savedAt; this.last=Date.now(); render(); return true;
-  },
-  /* 打開時、回到頁面時：雲端比較新就載入（本機先自動備份），本機比較新就上傳 */
-  async pull(){
-    if(!this.ready || Store.locked) return;
-    try{
-      const ms=await this.ref("lifeos_meta").get();
-      if(!ms.exists){ await this.push(); return; }
-      const m=ms.data(), local=S.savedAt||0;
-      if(m.savedAt>local){ if(await this.adopt(m,"從雲端載入前，自動備份這台裝置的資料")) toast("已載入雲端最新的資料"); }
-      else { this.known=m.savedAt; if(local>m.savedAt) await this.push(); else this.last=Date.now(); }
-      if(this.ready) this.err=null;
-    }catch(e){ if(!this.denied(e)) this.err=e&&e.code||"error"; }
-  },
-  schedule(){ if(!this.ready) return; clearTimeout(this.timer); this.timer=setTimeout(()=>this.push(),1500); },
-  async push(){
-    if(!this.ready || Store.locked) return;
-    if(this.busy){ this.again=true; return; }
-    this.busy=true;
-    try{
-      const ms=await this.ref("lifeos_meta").get(), old=ms.exists?ms.data():null;
-      // 其他裝置在我們上次同步之後寫過 → 不覆蓋，先備份本機，再載入雲端
-      if(old && old.savedAt>this.known && old.device!==this.device){ await this.adopt(old,"同步時發現其他裝置有較新的資料，已自動備份這台裝置的資料"); toast("其他裝置有更新，已同步（這台的資料已備份）"); return; }
-      const str=JSON.stringify(S), size=60000, n=Math.max(1,Math.ceil(str.length/size)), v=String(S.savedAt||Date.now());
-      for(let i=0;i<n;i++) await this.ref(`lifeos_${v}_${i}`).set({s:str.slice(i*size,(i+1)*size)});
-      await this.ref("lifeos_meta").set({v, n, savedAt:S.savedAt||Date.now(), device:this.device, schema:SCHEMA});
-      if(old && old.v!==v) for(let i=0;i<old.n;i++) await this.ref(`lifeos_${old.v}_${i}`).delete().catch(()=>{});
-      this.known=S.savedAt||0; this.last=Date.now(); this.err=null;
-    }catch(e){ if(this.denied(e)) return; this.err=e&&e.code||"error"; if(e&&e.code==="quota_exceeded") toast("雲端空間已滿，資料仍保存在這台裝置"); }
-    finally{ this.busy=false; if(this.again){ this.again=false; this.push(); } }
-  }
-};
-/* 使用者的每次變更：記錄時間並排程上傳 */
-const _storeSave2=Store.save;
-Store.save=function(){ if(booted && !Cloud.applying) S.savedAt=Date.now(); const ok=_storeSave2.call(Store); if(booted && !Cloud.applying) Cloud.schedule(); return ok; };
-document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) Cloud.pull(); });
 
 /* ---------- 首頁合併「成長」 ---------- */
 function growthOnHome(){
   const keep=hub; hub=null; const html=viewGrowth(); hub=keep; const tmp=document.createElement("div"); tmp.innerHTML=html;
   const body=tmp.querySelector(".body"); return body ? `<div class="growthblock"><div class="sec big">🌱 成長與生活管理</div>${body.innerHTML}</div>` : "";
 }
-
-/* ---------- 事件 ---------- */
-app.addEventListener("click", e=>{
-  const t=e.target;
-  // 收集：AI 整理
-  const ao=t.closest("#btnAIOrganize"); if(ao){
-    const text=$("captureInput").value.trim(); if(!text){ toast("先寫下至少一件事"); return; }
-    aiRun(ao, async()=>{ const items=await AIF.organize(text); if(!items.length){ toast("AI 沒有整理出任務，可以改用「整理」"); return; }
-      S.results=S.results.concat(items); S.draft=""; save(); sub.collect="result"; render(); toast(`AI 整理出 ${items.length} 件，請確認後加入`); });
-    return;
-  }
-  // 今日建議：AI 早晨建議
-  const ap=t.closest("#btnAIPlan"); if(ap){ aiRun(ap, async()=>{ const on=streamTo("plan"); const txt=await AI.text("依使用者今天的心情、精神、可用時間和待辦，給一段溫柔的早晨關心，再給今天的做事建議：建議先做哪 1～3 件、怎麼開始第一步、什麼時候休息。不要排精確的時間表。200 字以內。", AIF.todayData(), on); AIout.plan=txt; render(); }); return; }
-  // 每日回顧：AI 總結
-  const ar=t.closest("#btnAIReview"); if(ar){ aiRun(ar, async()=>{ const T=D.today(), st=Review.stats(T), mr=Mood.get(T);
-    const on=streamTo("review"); const txt=await AI.text("陪使用者回顧今天：先肯定今天做到的事，溫柔看待沒完成的部分（會自動順延，不需要自責），最後給一句鼓勵和明天的一個小建議。150 字以內。",
-      {完成率:st.rate+"%", 完成的事:st.done.map(x=>x.title), 沒完成的件數:st.open.length, 習慣:`${st.habitsDone}/${st.habitsTotal}`, 心情:mr?.mood||"未記錄", 開心的事:$("rHappy")?.value||"", 感謝的事:$("rThanks")?.value||"", 明天想做:$("rTomorrow")?.value||""}, on);
-    AIout.review=txt; render(); }); return; }
-  if(t.closest("#btnAIReviewSave")){ const r=Review.get(); if(!r){ toast("先按「完成今日回顧」"); return; } r.aiNote=AIout.review; save(); render(); toast("已存進今日回顧"); return; }
-  // 週報月報：AI 分析
-  const arp=t.closest("#btnAIReport"); if(arp){ const kind=sub.rpt, rg=Report.range(kind,rptOffset), x=Report.compute(rg), key="rpt-"+rg.start;
-    aiRun(arp, async()=>{ const on=streamTo(key); const txt=await AI.text(`分析使用者這${kind==="week"?"一週":"個月"}的生活，分成「做得好的地方」「需要留意的地方」「${kind==="week"?"下週":"下個月"}的 3 個小建議」，語氣溫柔、具體。300 字以內。`,
-      {期間:rg.label, 任務完成率:x.rate+"%", 完成任務數:x.done.length, 各分類完成:x.catDone, 習慣:x.habits.map(h=>({習慣:h.h.title, 次數:h.n, 完成率:h.pct+"%"})), 心情:x.mc, 平均精神:x.avgE, 壓力來源:x.stress, 里程碑:x.ms, 收入:x.inc, 支出:x.exp, 月度目標:x.monthGoals, 成長點數:x.pts}, on);
-      AIout[key]=txt; render(); }); return; }
-  // 財務：AI 分析
-  const af=t.closest("#btnAIFin"); if(af){ const m=finMonth, cur=Fin.month(m), key="fin-"+m;
-    aiRun(af, async()=>{ const on=streamTo(key); const txt=await AI.text("看這個月的收支，用溫柔、不批評的語氣說明花錢的狀況，指出 1～2 個值得注意的地方，給 2～3 個容易做到的建議。不要給投資建議。200 字以內。金額單位是新台幣。",
-      {月份:M.label(m), 收入:Fin.total(cur,"income"), 支出:Fin.total(cur,"expense"), 上月支出:Fin.total(Fin.month(M.add(m,-1)),"expense"), 支出分類:Object.fromEntries(Fin.byCat(m)), 預算:S.fin.budgets.map(b=>({分類:b.cat, 預算:b.amount, 已用:Fin.used(b.cat,m)})), 儲蓄目標:S.fin.savings.map(s=>({目標:s.title, 目標金額:s.target, 已存:Fin.saved(s)}))}, on);
-      AIout[key]=txt; render(); }); return; }
-});
-
-$("sheet").addEventListener("click", e=>{
-  const t=e.target;
-  // 任務拆解
-  const sp=t.closest("[data-aisplit]"); if(sp){ const tk=Tasks.get(sp.dataset.aisplit); if(!tk) return;
-    aiRun(sp, async()=>{ const steps=await AIF.split(tk); if(!steps.length){ toast("AI 沒有拆出步驟，可以再試一次"); return; }
-      Sheet._steps={id:tk.id, steps};
-      Sheet.open(`<h3>${ic("spark")} 拆成小步驟</h3><p class="muted" style="margin:0 0 12px;font-size:14px">「${esc(tk.title)}」— 勾選想加入的步驟，確認後才會建立成任務。</p>
-        <div class="list">${steps.map((s,i)=>`<label class="item ms" style="padding:10px 12px"><input type="checkbox" data-step="${i}" checked><span>${esc(s.title)}</span><em>${s.mins} 分</em></label>`).join("")}</div>
-        <label class="fld" style="margin-top:12px"><span>安排日期</span><input type="date" id="stepDate" value="${tk.scheduledDate<D.today()?D.today():tk.scheduledDate}" min="${D.today()}"></label>
-        <div class="hrow" style="margin-top:14px"><button class="btn" data-aistepsave style="flex:1">建立勾選的步驟</button><button class="btn ghost" data-act="close">取消</button></div>
-        <p class="hint">AI 的建議僅供參考，可以先取消勾選不需要的步驟。</p>`); });
-    return;
-  }
-  if(t.closest("[data-aistepsave]")){ const st=Sheet._steps; if(!st) return; const tk=Tasks.get(st.id), date=$("stepDate").value;
-    const pick=[...document.querySelectorAll("[data-step]")].filter(x=>x.checked).map(x=>st.steps[+x.dataset.step]);
-    if(!pick.length){ toast("至少勾選一個步驟"); return; }
-    pick.forEach(s=>Tasks.create({title:s.title, category:tk?.category||"生活", priority:tk?.priority||"中", mins:s.mins, scheduledDate:date, goalId:tk?.goalId||null}));
-    save(); Sheet.close(); render(); toast(`已建立 ${pick.length} 個小步驟`); return; }
-  // 習慣：AI 建議更容易的版本（填入欄位，仍需按確認）
-  const ae=t.closest("[data-aieasy]"); if(ae){ const h=Habits.get(ae.dataset.aieasy); if(!h) return;
-    aiRun(ae, async()=>{ const r=await AI.json("這個習慣最近很難維持。請提出一個更容易、更小、今天就做得到的版本，保留原本的方向。",
-      {習慣:h.title, 原本目標:h.target, 最近7天打卡次數:Habits.last7(h.id).filter(x=>x.done).length}, `{"target":"新的目標（一句話）","why":"一句溫柔的理由"}`, "quick");
-      if(r&&r.target){ $("eaTarget").value=String(r.target).slice(0,80); const w=$("eaWhy"); if(w) w.textContent=r.why?String(r.why).slice(0,120):""; } }); return; }
-  // 搜尋：AI 理解句子
-  const as=t.closest("#btnAISearch"); if(as){ const q=$("gSearch").value.trim(); if(!q){ toast("先輸入想找的內容"); return; }
-    aiRun(as, async()=>{ const T=D.today(); const r=await AI.json("把使用者的搜尋句子轉成搜尋條件。時間範圍沒提到就是 null。module 只能從清單選一個或 null。keywords 是 1～4 個最重要的關鍵詞（名詞），不要放時間詞。",
-      {今天:T, module清單:{task:"待辦任務",journal:"心情日記",kb:"筆記知識收藏",wish:"願望",goal:"目標",fin:"記帳",habit:"習慣",review:"每日回顧",profile:"個人資料"}, 句子:q},
-      `{"start":"YYYY-MM-DD 或 null","end":"YYYY-MM-DD 或 null","module":"task|journal|kb|wish|goal|fin|habit|review|profile 或 null","keywords":["關鍵詞"]}`, "quick");
-      const parsed={range:(D.valid(r?.start)&&D.valid(r?.end))?{start:r.start,end:r.end}:null, mod:MODNAME[r?.module]?r.module:null, words:(Array.isArray(r?.keywords)?r.keywords:[]).map(x=>String(x).toLowerCase().trim()).filter(Boolean).slice(0,4)};
-      renderSearch(q, parsed, true); }); return; }
-});
-
 
 /* ---------- 新朋友第一次打開：使用說明 ---------- */
 Sheet.welcome=function(){
@@ -2887,8 +2665,7 @@ Sheet.welcome=function(){
       ${step("star","星光秘境","神諭卡、運勢籤、肯定語、許願池、月相，給自己一點鼓勵。")}
       ${step("home","今日","首頁最下方還有習慣、心情日記、目標、財務、第二大腦。")}
     </div>
-    <div class="note2" style="margin-top:14px">${ic("heart")}<span><b>你的資料是私人的</b>，只存在你自己的裝置${window.claude?"（或你自己的 Claude 帳號）":""}，其他人看不到。</span></div>
-    ${window.claude?`<div class="note2" style="margin-top:10px">${ic("spark")}<span><b>AI</b>：第一次按 AI 按鈕會詢問是否允許，用的是你自己的 Claude 額度。</span></div>`:""}
+    <div class="note2" style="margin-top:14px">${ic("heart")}<span><b>你的資料是私人的</b>，只存在你自己的裝置，其他人看不到。</span></div>
     <div class="note2" style="margin-top:10px">${ic("download")}<span><b>備份</b>：右上角設定 → 匯出備份檔。換手機或清除瀏覽器前記得先匯出。</span></div>
     <button class="btn full" data-act="close" style="margin-top:16px">開始使用</button>`);
 };
@@ -3404,7 +3181,7 @@ function vSpread(){
     res=`${r.question?`<div class="scard"><div class="sk">我的問題</div><p>${esc(r.question)}</p></div>`:""}
     <div class="spread3 ${animId===r.id?"flipin":""}">${cs.map((c,i)=>`<div class="mini"><em>${s2[2][i]}</em><b>${c.name}</b><span>👼 ${c.angel}</span></div>`).join("")}</div>
     <div class="scard">${cs.map((c,i)=>`<div class="sk">${s2[2][i]}・${c.name}</div><p>${s2[3][i](c)}</p>`).join("")}
-      <div class="sk">✨ 整體統整</div><p>${s2[4](cs[0],cs[1],cs[2])}</p><p class="muted2">整體統整依固定規則組合，不是 AI 生成。</p>${recTools(r)}</div>`; }
+      <div class="sk">✨ 整體統整</div><p>${s2[4](cs[0],cs[1],cs[2])}</p><p class="muted2">整體統整依固定規則組合。</p>${recTools(r)}</div>`; }
   return shero("🃏","三張牌，看見事情的全貌。","三張牌指引") + `<div class="body sbody">
     <div class="schips">${SPREADS.map(s=>`<button class="chip ${sprSel===s[0]?"on":""}" data-spr="${s[0]}">${s[1]}</button>`).join("")}</div>
     <div class="scard"><p class="muted2" style="margin-top:0">${sp[2].join(" → ")}</p>
@@ -3957,8 +3734,7 @@ applyDeco();
 render();
 booted=true;
 if(Store.locked) Sheet.lock();
-AI.init(); Cloud.init().then(maybeWelcome, maybeWelcome);
-$("sheet").addEventListener("change", e=>{ if(e.target.id==="aiProfile"){ S.settings.aiUseProfile=e.target.checked; save(); } });
+maybeWelcome();
 
 </script>
 </body>

@@ -20,7 +20,7 @@
 7. API 金鑰不得放在前端。
 8. 星光秘境：內容原創，不複製市售牌卡圖文；標示「娛樂與自我反思」。
    大天使神諭卡依真實天使傳統（名字原意、典籍出處）；星座運勢、個人星盤、盧恩符文、易經已依使用者要求移除，不要加回。
-9. AI 整理與雲端同步只在 Claude 環境（window.claude）可用；在一般網址會自動隱藏，資料只存本機。
+9. App 已完全移除 AI 與雲端同步（使用者決定），不要加回；所有資料只存在使用者自己的裝置。
 10. 介面全站使用 emoji；財務帳戶類型包含「股票」。
 
 ## 測試
@@ -29,7 +29,7 @@ pip install playwright && python -m playwright install chromium
 cd tests && npm install        # 月相比對用的 astronomy-engine
 python t4d.py && python t5d.py && python t6e.py && python t7b.py && python t8.py
 ```
-每次修改後全部跑過；目前共 253 項全部通過。改版面時用 390px 與 360px 寬度截圖檢查。
+每次修改後全部跑過；目前共 221 項全部通過（t7b 改為「確認沒有 AI 與雲端同步」）。改版面時用 390px 與 360px 寬度截圖檢查。
 
 ## 發布
 靜態網站（Netlify 或 GitHub Pages），`index.html` 放在根目錄。

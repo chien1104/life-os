@@ -53,7 +53,7 @@ with sync_playwright() as p:
     ok("本月總覽：收入 NT$ 42,000、支出 NT$ 4,300（轉帳不計）", "42,000" in txt and "4,300" in txt and "收入（NT$）" in txt, txt[:300])
     ok("支出分類長條（購物在最前）", pg.locator('.hbar').first.inner_text().startswith("購物"))
     ok("近 6 個月圖：有圖例、每月兩根柱、可展開數字表", pg.locator('.legend').count()==1 and pg.locator('.vb').count()==12 and pg.locator('details.tbl tr').count()==7)
-    ok("財務觀察標示為規則整理", "依規則整理" in txt and "比上個月" in txt)
+    ok("財務觀察有比較上個月，沒有 AI 字樣", "財務觀察" in txt and "比上個月" in txt and "AI" not in txt)
     pg.click('.seg [data-v=budget]'); pg.fill('[data-fbud="購物"]','3000'); pg.locator('[data-fbud="購物"]').dispatch_event('change')
     ok("設定購物預算 3000，顯示已超過", "已超過" in pg.inner_text('#app'))
     pg.click('.seg [data-v=overview]'); ok("觀察提到購物超過預算", "「購物」已超過預算" in pg.inner_text('#app'))
@@ -119,7 +119,7 @@ with sync_playwright() as p:
     pg.screenshot(path=str(OUT/'home3.png'),full_page=True)
     # ===== 週報月報 =====
     hubgo('report'); txt=pg.inner_text('#app')
-    ok("每週報告：有完成率、生活平衡、心情、建議（標示規則）", "任務完成率" in txt and "生活平衡" in txt and "疲累" in txt and "依規則整理" in txt)
+    ok("每週報告：有完成率、生活平衡、心情、建議（沒有 AI）", "任務完成率" in txt and "生活平衡" in txt and "疲累" in txt and "AI" not in txt)
     pg.click('.seg [data-v=month]'); txt=pg.inner_text('#app')
     ok("每月報告：顯示 2026 年 11 月與收支", "2026 年 11 月" in txt and "NT$ 42,000" in txt)
     pg.click('[data-rp="-1"]'); ok("可以看上個月（10 月）", "2026 年 10 月" in pg.inner_text('#app'))
