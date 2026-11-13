@@ -7,6 +7,12 @@
 <title>🌻芊的工具檯</title>
 <meta name="apple-mobile-web-app-title" content="芊的工具檯">
 <meta name="application-name" content="芊的工具檯">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
 <style>
@@ -3735,6 +3741,8 @@ render();
 booted=true;
 if(Store.locked) Sheet.lock();
 maybeWelcome();
+/* 離線使用：只在一般網址（https）註冊，Claude 預覽或本機檔案不註冊 */
+try{ if("serviceWorker" in navigator && location.protocol==="https:" && window.top===window.self) navigator.serviceWorker.register("sw.js").catch(()=>{}); }catch(e){}
 
 </script>
 </body>

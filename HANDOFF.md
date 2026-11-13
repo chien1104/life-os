@@ -11,6 +11,7 @@
 
 - **App 檔案**：`index.html`，單一檔案，約 390 KB，資料格式 schemaVersion 5。
 - **測試**：`tests/` 5 組共 221 項，全部通過（t4d 57、t5d 54、t6e 50、t7b 12、t8 48）。
+- **手機 App 化（PWA）**：`manifest.webmanifest`、`sw.js`、`icons/`。加入主畫面有 🌻 圖示、沒有網址列、沒網路也能開。sw.js 只快取 App 檔案，有網路一律先抓最新版；改版後如要強制更新可把 `CACHE` 版本號加 1。
 - **AI 與雲端同步已完全移除**（2026-11-14 使用者決定）。舊資料裡的 aiNote 會以「回顧筆記」顯示。
 - **Claude 裡的版本**：https://claude.ai/artifact/R3kpUvzFJW5SC8on7CLMkd（只有擁有者登入後能看）。
 - **Netlify 網址**：https://reliable-maamoul-35d9c3.netlify.app
