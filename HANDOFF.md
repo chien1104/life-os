@@ -1,4 +1,7 @@
-# 交接說明：Life OS 生活整理工具箱（2026-11-14）
+# 交接說明：🌻芊的工具檯（原名 Life OS 生活整理工具箱，2026-11-14）
+
+- App 顯示名稱已改為「🌻芊的工具檯」。資料儲存鍵（lifebox_v1 等）與備份檔內的 app 欄位維持不變，以免舊資料或舊備份讀不到。
+- 公開網址：https://chien1104.github.io/life-os/（GitHub Pages，推上 main 自動更新）
 
 這份文件把在 Claude 對話裡做過的事整理起來，交給 Claude Code 接手。請先讀 `CLAUDE.md`（規則），再讀這份（現況與待辦）。
 

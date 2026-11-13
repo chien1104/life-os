@@ -2,7 +2,7 @@ from playwright.sync_api import sync_playwright
 import os, json, datetime
 from pathlib import Path
 HERE=Path(__file__).resolve().parent; OUT=HERE/'out'; OUT.mkdir(exist_ok=True)
-URL='file://'+os.path.abspath('/home/claude/生活整理工具箱.html')
+URL=Path(__file__).resolve().parents[1].joinpath('index.html').as_uri()
 R=[]
 def ok(n,c,extra=""): R.append(("PASS" if c else "FAIL")+"  "+n+(("  ["+str(extra)+"]") if (extra!="" and not c) else ""))
 # 固定「今天」= 2026-11-13（星期五）台北時間 10:00

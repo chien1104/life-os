@@ -4,7 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#fcf8f2">
-<title>生活整理工具箱</title>
+<title>🌻芊的工具檯</title>
+<meta name="apple-mobile-web-app-title" content="芊的工具檯">
+<meta name="application-name" content="芊的工具檯">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
 <style>
@@ -555,7 +557,7 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 <div class="phone">
   <header class="topbar">
     <div class="logo"><svg class="i" viewBox="0 0 24 24"><path d="M12 21c-4.5-2.6-8-6.2-8-10.2A4.3 4.3 0 0 1 12 8a4.3 4.3 0 0 1 8 2.8c0 4-3.5 7.6-8 10.2z"/><path d="M12 8V3"/></svg></div>
-    <div class="brandtx"><small>LIFE OS</small><span class="appname">生活整理工具箱</span></div>
+    <div class="brandtx"><small>LIFE OS</small><span class="appname">🌻芊的工具檯</span></div>
     <div class="datepill"><span class="dot" id="weekday">五</span><span id="datetext"></span></div>
     <button class="gear" id="btnSearch" aria-label="搜尋全部"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg></button>
     <button class="gear" id="btnSettings" aria-label="資料與備份"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
@@ -1503,7 +1505,7 @@ $("importFile").addEventListener("change", e=>{
   const rd=new FileReader();
   rd.onload=()=>{
     const d=Backup.read(rd.result);
-    if(!d){ Sheet.ask("無法匯入","這個檔案不是 Life OS 的備份檔，或內容已經損壞。目前的資料沒有任何變動。",[{label:"知道了"}]); return; }
+    if(!d){ Sheet.ask("無法匯入","這個檔案不是工具檯的備份檔，或內容已經損壞。目前的資料沒有任何變動。",[{label:"知道了"}]); return; }
     Sheet.ask("要怎麼匯入？", `備份檔裡有待辦 ${d.todos.length} 件、建議紀錄 ${d.plans.length} 筆、抽卡 ${d.cards.length} 筆。<br><b>合併</b>：保留目前資料，只加入還沒有的項目（不會重複）。<br><b>取代</b>：改成備份檔的內容，目前資料會先自動備份。`,
       [{label:"合併",fn:()=>{ Store.snapshot("匯入（合併）前自動備份"); Store.locked=null; const n=Backup.merge(d); Tasks.rollover(); save(); render(); toast(`已合併，新增 ${n} 件待辦`); }},
        {label:"取代",ghost:true,fn:()=>{ Store.snapshot("匯入（取代）前自動備份"); S=d; Store.locked=null; restoreImportFiles(); Tasks.rollover(); save(); render(); toast("已改成備份檔的內容"); }},
@@ -2674,7 +2676,7 @@ const AI = {
     this.ok=!!this.s; if(this.ok) render();
   },
   persona(){
-    return `你是「Life OS 生活整理工具箱」裡的生活教練。語氣溫柔、有同理心、不批評、不施壓、不說教、不製造罪惡感。` +
+    return `你是「芊的工具檯」裡的生活教練。語氣溫柔、有同理心、不批評、不施壓、不說教、不製造罪惡感。` +
       `一律使用繁體中文（台灣用語），句子簡短，給具體、馬上能做的小步驟。不要把推測當成使用者的事實。今天是 ${D.label(D.today())}。`;
   },
   profile(){
@@ -2873,7 +2875,7 @@ $("sheet").addEventListener("click", e=>{
 /* ---------- 新朋友第一次打開：使用說明 ---------- */
 Sheet.welcome=function(){
   const step=(i,t,d)=>`<div class="wstep">${tile(i)}<div><b>${t}</b><p>${d}</p></div></div>`;
-  Sheet.open(`<h3>歡迎使用 Life OS</h3>
+  Sheet.open(`<h3>歡迎使用 🌻芊的工具檯</h3>
     <p class="muted" style="margin:0 0 14px;font-size:14px;line-height:1.7">把腦袋裡的事情放進來，讓生活更有方向。五個地方先認識就好：</p>
     <div class="wsteps">
       ${step("pen","收集","想到什麼就寫，一行一件事，按「整理」會自動分類、判斷日期，確認後才建立。")}
@@ -2916,7 +2918,7 @@ function lockBanner(){
 }
 Sheet.lock=function(){
   if(Store.locked==="corrupt"){
-    Sheet.ask("資料無法讀取","這台裝置上的 Life OS 資料格式損壞，目前<b>暫停所有儲存</b>，原本的內容仍保留在原處。你可以先下載原始內容，或從自動備份還原。",[
+    Sheet.ask("資料無法讀取","這台裝置上的工具檯資料格式損壞，目前<b>暫停所有儲存</b>，原本的內容仍保留在原處。你可以先下載原始內容，或從自動備份還原。",[
       {label:"⬇️ 下載原始內容", fn:()=>offerFile(`lifeos-原始資料-${D.today()}.txt`, new Blob([Store.rawCorrupt||""],{type:"text/plain"}))},
       {label:"🗂️ 從自動備份還原", fn:()=>Sheet.settings()},
       {label:"重新開始（清空並使用新資料）", ghost:true, fn:()=>Sheet.ask("確定要重新開始嗎？","原始內容會被新的空白資料取代。建議先下載原始內容。這個動作無法復原。",[
@@ -3911,7 +3913,7 @@ $("sheet").addEventListener("click", e=>{
 /* 匯出星光秘境紀錄 */
 function starExport(kind){
   if(kind==="json"){ offerFile(`星光秘境紀錄_${D.today()}.json`, new Blob([JSON.stringify({app:"Life OS 星光秘境",exportedAt:new Date().toISOString(),star:S.star,wishes:S.wishlist,legacyFortune:S.cards},null,2)],{type:"application/json"})); return; }
-  const lines=["Life OS・星光秘境 探索紀錄",`匯出日期：${D.today()}`,""];
+  const lines=["芊的工具檯・星光秘境 探索紀錄",`匯出日期：${D.today()}`,""];
   recItems().forEach(x=>{ lines.push(`【${x.date}】${x.title}`); if(x.text) lines.push(x.text); lines.push(""); });
   offerFile(`星光秘境紀錄_${D.today()}.txt`, new Blob([lines.join("\n")],{type:"text/plain"}));
 }
