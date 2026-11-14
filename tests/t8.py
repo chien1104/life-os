@@ -1,5 +1,5 @@
 from playwright.sync_api import sync_playwright
-import json, datetime, subprocess
+import json, datetime, subprocess, collections
 from pathlib import Path
 HERE=Path(__file__).resolve().parent; OUT=HERE/'out'; OUT.mkdir(exist_ok=True)
 URL=''+__import__('pathlib').Path(__file__).resolve().parents[1].joinpath('index.html').as_uri()+''
@@ -143,6 +143,33 @@ with sync_playwright() as p:
         if pg2.evaluate("[affToday().id,oracleFor(D.today()).id,fortuneFor(D.today()).id].join()")!=",".join([affA,oA,fA]): diffs+=1
         ctx.close()
     ok("不同人：每日內容隨機（6 人中至少 5 人不同）", diffs>=5, diffs)
+    # ===== 擲杯問神明 =====
+    ctx,pg,errs=fresh(b,v4)
+    pg.click('[data-tab=card]'); ok("星光秘境首頁有擲杯入口", pg.locator('.stool[data-sp=jiao]').count()==1)
+    pg.click('.stool[data-sp=jiao]'); pg.screenshot(path=str(OUT/'j0.png'),full_page=True)
+    pg.click('[data-jiao]'); ok("沒寫問題不能擲", len(pg.evaluate("S.star.draws.filter(d=>d.tool==='jiao')"))==0)
+    pg.fill('#jiaoQ','這個月換工作適合嗎？'); pg.select_option('#jiaoDeity','媽祖'); pg.click('[data-jiao]'); pg.wait_for_timeout(1200)
+    d=pg.evaluate("S.star.draws.filter(d=>d.tool==='jiao')")
+    ok("擲一次：保存問題、神明、結果", len(d)==1 and d[0]['deity']=="媽祖" and d[0]['question'].startswith("這個月") and len(d[0]['throws'])==1 and d[0]['throws'][0] in ("sheng","xiao","yin"), d)
+    ok("顯示結果名稱", any(x in pg.inner_text('.jres') for x in ["聖杯","笑杯","陰杯"]))
+    pg.screenshot(path=str(OUT/'j1.png'),full_page=True)
+    # 三聖杯模式：強制結果
+    pg.select_option('#jiaoMode','three'); pg.evaluate("window._seq=['sheng','sheng','sheng']; jiaoThrow=()=>window._seq.shift(); 0")
+    pg.click('[data-jiao]'); pg.wait_for_timeout(1100); ok("三聖杯：第一杯後提示再擲", "再擲一次" in pg.inner_text('[data-jiao]'))
+    pg.click('[data-jiao]'); pg.wait_for_timeout(1100); pg.click('[data-jiao]'); pg.wait_for_timeout(1100)
+    d=pg.evaluate("S.star.draws.filter(d=>d.tool==='jiao')")
+    ok("三聖杯：同一次請示記錄三杯", len(d)==2 and d[1]['throws']==["sheng"]*3 and "連續三個聖杯" in pg.inner_text('#app'), d[-1])
+    pg.screenshot(path=str(OUT/'j3.png'),full_page=True)
+    pg.evaluate("window._seq=['sheng','yin']"); pg.click('[data-jiao]'); pg.wait_for_timeout(1100); pg.click('[data-jiao]'); pg.wait_for_timeout(1100)
+    d=pg.evaluate("S.star.draws.filter(d=>d.tool==='jiao')")
+    ok("三聖杯：中途陰杯就結束", d[-1]['throws']==["sheng","yin"] and "擲杯" in pg.inner_text('[data-jiao]') and "再擲" not in pg.inner_text('[data-jiao]'), d[-1])
+    pg.reload(); pg.wait_for_timeout(300); ok("重新整理後紀錄還在", len(pg.evaluate("S.star.draws.filter(d=>d.tool==='jiao')"))==3)
+    pg.evaluate("goStar('records')"); pg.click('[data-rt=jiao]'); ok("探索紀錄可篩選擲杯", pg.locator('.rrow').count()==3)
+    cnt=collections.Counter(pg.evaluate("Array.from({length:40000},()=>{const [a,b]=jiaoRand(); return a!==b?'sheng':(a?'xiao':'yin')})"))
+    ok("機率約 聖杯 1/2、笑杯 1/4、陰杯 1/4", abs(cnt['sheng']/40000-.5)<.015 and abs(cnt['xiao']/40000-.25)<.015 and abs(cnt['yin']/40000-.25)<.015, cnt)
+    ok("390px 沒有水平溢出", pg.evaluate("document.documentElement.scrollWidth")<=390)
+    ok("沒有程式錯誤", not errs, errs)
+    ctx.close()
     # 月相精確度
     ctx,pg,_=fresh(b,v4)
     ev=pg.evaluate("Moon.between('2026-01-01','2027-12-31').map(e=>[e.type,e.at instanceof Date?e.at.getTime():e.at])")

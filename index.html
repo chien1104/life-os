@@ -552,6 +552,25 @@ button.scard:active{transform:scale(.98)} button.scard:hover{background:rgba(255
 .sgrid{margin-bottom:12px}
 .starwrap .schips{margin-bottom:12px}
 .starwrap .schips+.btn,.starwrap .schips+button{margin-top:0!important}
+
+/* 擲杯 */
+.jstage{text-align:center;padding:18px 10px 8px}
+.starwrap #jiaoQ{min-height:64px;height:auto}
+.jpair{display:flex;justify-content:center;gap:18px;margin:6px 0 10px}
+.jblock{width:112px;height:66px;filter:drop-shadow(0 6px 10px rgba(10,6,25,.35))}
+.jblock.r{transform:scaleX(-1) rotate(-6deg)} .jblock:not(.r){transform:rotate(6deg)}
+.jpair.spin .jblock{animation:jspin .45s linear infinite}
+.jpair.spin .jblock.r{animation-delay:-.2s}
+@keyframes jspin{0%{transform:translateY(0) rotateX(0)}50%{transform:translateY(-26px) rotateX(180deg)}100%{transform:translateY(0) rotateX(360deg)}}
+.jres{font-family:var(--font-title);font-size:30px;font-weight:700;margin:2px 0 6px;text-shadow:0 1px 0 rgba(255,255,255,.5);background:#fbf3e4;display:inline-block;padding:4px 22px;border-radius:18px}
+.jmsg{font-size:15px;line-height:1.8;margin:8px 4px 4px}
+.jtip{font-size:13.5px;color:var(--ssoft);margin:6px 4px 4px;line-height:1.7}
+.jhint{font-size:13.5px;color:var(--ssoft);line-height:1.8;margin:6px 0}
+.jdots{display:flex;justify-content:center;gap:8px;margin:4px 0}
+.jdots span{min-width:58px;padding:4px 8px;border-radius:12px;border:1px dashed var(--sline);font-size:12px;color:var(--ssoft)}
+.jdots span.on.sheng{border-style:solid;border-color:#e3c58d;color:#e3c58d}
+.jdots span.on.xiao,.jdots span.on.yin{border-style:solid;border-color:#c9bfd8;color:#c9bfd8}
+@media (prefers-reduced-motion:reduce){.jpair.spin .jblock{animation:none}}
 .grid2>*,.fld,.hrow>*{min-width:0}
 input[type=date],input[type=time]{min-width:0;max-width:100%;display:block;-webkit-appearance:none;appearance:none;text-align:left}
 input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and-time-value{text-align:left}
@@ -3097,7 +3116,7 @@ function starHome(){
     <button class="scard srow" data-sp="moon"><span class="sre">${mi.e}</span><span class="srt"><b>今天是${mi.name}</b><br>${nf?`下一個滿月 ${D.label(nf.date)}`:""}${nn?`・新月 ${D.label(nn.date)}`:""}</span></button>
     <div class="ssec">靈性工具</div>
     <div class="sgrid">
-      ${cat("👼","每日指引",[["oracle","👼","大天使神諭卡"],["fortune","🧧","每日運勢籤"],["affirm","💌","每日肯定語"],["spread","🃏","三張牌指引"]])}
+      ${cat("👼","每日指引",[["oracle","👼","大天使神諭卡"],["fortune","🧧","每日運勢籤"],["affirm","💌","每日肯定語"],["spread","🃏","三張牌指引"],["jiao","🙏","擲杯問神明"]])}
       ${cat("🌠","顯化與願望",[["wishes","🌠","顯化許願池"],["vision","🎯","願景板"],["mjournal","✍️","顯化日記"],["gratitude","🤎","感恩日記"]])}
       ${cat("🌌","宇宙能量",[["moon","🌕","月相日曆"],["angel","🔢","天使數字"]])}
       ${cat("🪞","自我探索",[["soul","🪞","靈魂提問卡"]])}
@@ -3174,6 +3193,81 @@ function vFortune(){
     ${sdisc("籤詩為原創內容，屬於娛樂與自我反思，不預測未來。")}
   </div>`;
 }
+
+/* ---------- 🙏 擲杯問神明（擲筊） ----------
+   依台灣民間擲筊習俗：兩片筊杯各自落地，一平一凸為聖杯、兩平面朝上為笑杯、兩凸面朝上為陰杯。
+   每片各有一半機會平面朝上，所以聖杯約 1/2、笑杯約 1/4、陰杯約 1/4。屬於娛樂與自我反思。 */
+const JIAO_DEITIES=["心中的神明","觀世音菩薩","媽祖","土地公","月下老人","關聖帝君","文昌帝君","財神爺","玄天上帝","註生娘娘"];
+const JIAO_RES={
+  sheng:{name:"聖杯",e:"🙏",face:["flat","round"],c:"#c0392b",
+    msg:"一平一凸，神明點頭了。代表同意、可以去做。",
+    tip:"把這份肯定化成第一個小行動，今天就踏出一步。"},
+  xiao:{name:"笑杯",e:"😊",face:["flat","flat"],c:"#c98a2e",
+    msg:"兩個平面朝上，神明在微笑。可能是問題還不夠清楚，或答案其實已經在你心裡。",
+    tip:"把問題說得更具體一點（誰、什麼事、什麼時候），再誠心問一次。"},
+  yin:{name:"陰杯",e:"🌙",face:["round","round"],c:"#5b4b8a",
+    msg:"兩個凸面朝上，神明搖頭了。可能是不太適合，或時機還沒到。",
+    tip:"先別急著做決定，換個方式或過一段時間再想想。"}
+};
+let jiaoQ="", jiaoDeity="心中的神明", jiaoMode="once", jiaoSess=null, jiaoAnim=false;
+function jiaoRand(){ try{ const a=new Uint8Array(2); crypto.getRandomValues(a); return [a[0]&1,a[1]&1]; }catch(e){ return [Math.random()<.5?1:0, Math.random()<.5?1:0]; } }
+function jiaoThrow(){ const [a,b]=jiaoRand(); return a!==b?"sheng":(a? "xiao":"yin"); }   // 1 = 平面朝上
+function jiaoBlock(face, i){ // 原創筊杯圖：月牙形，平面為淺紅、凸面為深紅帶光澤
+  const flat=face==="flat";
+  return `<svg class="jblock ${flat?"flat":"round"} ${i?"r":""}" viewBox="0 0 120 70" aria-hidden="true">
+    <path d="M6 58 C 14 14, 106 14, 114 58 C 92 44, 28 44, 6 58 Z" fill="${flat?"#e9a08f":"#b8322a"}" stroke="#7a1f1a" stroke-width="2.5" stroke-linejoin="round"/>
+    ${flat?`<path d="M22 50 C 40 42, 80 42, 98 50" fill="none" stroke="#c96f5f" stroke-width="2" stroke-linecap="round"/>`:`<path d="M30 34 C 48 22, 72 22, 88 32" fill="none" stroke="#e8786c" stroke-width="5" stroke-linecap="round" opacity=".7"/>`}
+  </svg>`;
+}
+function jiaoPair(res){ const f=JIAO_RES[res].face, sw=Math.random()<.5; return `<div class="jpair">${jiaoBlock(sw?f[1]:f[0],0)}${jiaoBlock(sw?f[0]:f[1],1)}</div>`; }
+function vJiao(){
+  const s=jiaoSess, last=s&&s.throws[s.throws.length-1];
+  const done=s&&(s.mode==="once"? s.throws.length>=1 : (last&&last!=="sheng")||s.throws.length>=3);
+  const need3=s&&s.mode==="three";
+  const hist=S.star.draws.filter(d=>d.tool==="jiao").sort((a,b)=>b.at-a.at).slice(0,5);
+  let stage="";
+  if(jiaoAnim) stage=`<div class="jstage"><div class="jpair spin">${jiaoBlock("round",0)}${jiaoBlock("flat",1)}</div><p class="jhint">筊杯落下中…</p></div>`;
+  else if(last){
+    const R=JIAO_RES[last];
+    const allSheng=need3&&s.throws.length===3&&s.throws.every(x=>x==="sheng");
+    stage=`<div class="jstage ${animId===s.id?"flipin":""}">${jiaoPair(last)}
+      <div class="jres" style="color:${R.c}">${R.e} ${R.name}</div>
+      ${need3?`<div class="jdots">${[0,1,2].map(i=>`<span class="${s.throws[i]?("on "+s.throws[i]):""}">${s.throws[i]?JIAO_RES[s.throws[i]].name:"・"}</span>`).join("")}</div>`:""}
+      <p class="jmsg">${allSheng?"連續三個聖杯！神明非常肯定這件事，可以安心去做。":R.msg}</p>
+      ${done?`<p class="jtip">${allSheng?"記得在心裡謝謝神明，然後帶著這份祝福踏出第一步。":R.tip}</p>`:`<p class="jtip">第 ${s.throws.length} 杯是聖杯，再擲一次確認。</p>`}
+    </div>`;
+  } else stage=`<div class="jstage idle">${jiaoPair("sheng")}<p class="jhint">雙手合十，心中默念你的名字、生日、住的地方，<br>再說出想請示的事，然後擲杯。</p></div>`;
+  return shero("🙏","誠心請示，聽聽神明怎麼說。","擲杯問神明") + `<div class="body sbody">
+    <div class="scard">
+      ${!s||done?`<label class="fld"><span>想請示的事</span><textarea id="jiaoQ" rows="2" placeholder="例如：這個月換工作適合嗎？">${esc(jiaoQ)}</textarea></label>
+      <div class="grid2" style="margin-top:10px"><label class="fld"><span>請示的神明</span><select id="jiaoDeity">${JIAO_DEITIES.map(d=>`<option ${d===jiaoDeity?"selected":""}>${d}</option>`).join("")}</select></label>
+      <label class="fld"><span>方式</span><select id="jiaoMode"><option value="once" ${jiaoMode==="once"?"selected":""}>擲一次</option><option value="three" ${jiaoMode==="three"?"selected":""}>連續三聖杯確認</option></select></label></div>`
+      :`<div class="sk">請示中・${esc(s.deity)}</div><p>${esc(s.question)}</p>`}
+    </div>
+    ${stage}
+    <button class="btn full sgold" data-jiao="1" ${jiaoAnim?"disabled":""}>${!s||done?"🙏 擲杯":"🙏 再擲一次"}</button>
+    ${s&&done?`<div class="scard" style="margin-top:12px">${recTools(S.star.draws.find(d=>d.id===s.id)||{id:s.id})}</div>`:""}
+    <div class="scard" style="margin-top:12px"><div class="sk">三種結果</div>
+      ${Object.values(JIAO_RES).map(R=>`<div class="hline"><span><b style="color:${R.c}">${R.e} ${R.name}</b><em>${R.face[0]===R.face[1]?(R.face[0]==="flat"?"兩平面朝上":"兩凸面朝上"):"一平一凸"}</em></span></div><p class="muted2" style="margin:0 0 6px">${R.msg}</p>`).join("")}
+    </div>
+    ${hist.length?`<div class="scard"><div class="sk">最近的請示</div>${hist.map(d=>`<div class="hline"><span>${esc(d.question||"（未填寫）")}<em>${esc(d.deity)}</em></span><span>${d.throws.map(x=>JIAO_RES[x].name).join("・")}</span></div>`).join("")}</div>`:""}
+    ${sdisc("依台灣民間擲筊習俗設計，結果為隨機產生，屬於娛樂與自我反思，不代表真正的神意，重要決定請自己好好評估。")}
+  </div>`;
+}
+document.addEventListener("click", e=>{
+  const b=e.target.closest("[data-jiao]"); if(!b||jiaoAnim) return;
+  const s=jiaoSess, last=s&&s.throws[s.throws.length-1];
+  const done=s&&(s.mode==="once"? s.throws.length>=1 : (last&&last!=="sheng")||s.throws.length>=3);
+  if(!s||done){
+    const q=($("jiaoQ")?.value||"").trim(); jiaoQ=q; jiaoDeity=$("jiaoDeity")?.value||jiaoDeity; jiaoMode=$("jiaoMode")?.value||jiaoMode;
+    if(!q){ toast("先寫下想請示的事"); $("jiaoQ")?.focus(); return; }
+    const r=drawRec("jiao",jiaoMode,[],{question:q,deity:jiaoDeity,throws:[]});
+    jiaoSess=r;
+  }
+  jiaoAnim=true; render();
+  setTimeout(()=>{ const r=S.star.draws.find(d=>d.id===jiaoSess.id)||jiaoSess; r.throws.push(jiaoThrow()); r.result=r.throws[r.throws.length-1];
+    jiaoSess=r; jiaoAnim=false; animId=r.id; save(); render(); }, matchMedia("(prefers-reduced-motion: reduce)").matches?0:900);
+});
 
 /* ---------- 💌 肯定語 ---------- */
 function affLog(date, affId){ return S.star.affirmations.find(a=>a.date===date&&a.affId===affId); }
@@ -3402,11 +3496,12 @@ function vSoul(){
 }
 
 /* ---------- 📖 我的探索紀錄 ---------- */
-const REC_TOOLS=[["all","🌟","全部"],["oracle","👼","神諭卡"],["spread","🃏","三張牌"],["fortune","🧧","運勢籤"],["affirm","💌","肯定語"],["moon","🌕","月相"],["mj","✍️","顯化日記"],["grat","🤎","感恩"],["soul","🪞","靈魂提問"],["angel","🔢","天使數字"],["success","🏆","成功紀錄"]];
+const REC_TOOLS=[["all","🌟","全部"],["oracle","👼","神諭卡"],["spread","🃏","三張牌"],["fortune","🧧","運勢籤"],["jiao","🙏","擲杯"],["affirm","💌","肯定語"],["moon","🌕","月相"],["mj","✍️","顯化日記"],["grat","🤎","感恩"],["soul","🪞","靈魂提問"],["angel","🔢","天使數字"],["success","🏆","成功紀錄"]];
 function recItems(){
   const out=[], st=S.star;
   st.draws.forEach(d=>{ if(d.tool==="oracle"){ const c=ORC(d.cards[0].cardId), th=d.theme&&ORACLE_THEMES.find(t=>t[0]===d.theme); out.push({tool:"oracle",kind:"draw",id:d.id,date:d.date,title:`👼 ${c.name}（${c.angel}）`,text:`${th?th[2]+"・":""}${c.msg}${d.note?"／"+d.note:""}`,fav:d.fav,page:"oracle"}); }
     else if(d.tool==="spread"){ const s=SPREADS.find(x=>x[0]===d.spread)||SPREADS[0]; out.push({tool:"spread",kind:"draw",id:d.id,date:d.date,title:`🃏 ${s[1]}`,text:`${d.question?d.question+"：":""}${d.cards.map(x=>ORC(x.cardId).name).join("・")}${d.note?"／"+d.note:""}`,fav:d.fav,page:"spread"}); }
+    else if(d.tool==="jiao"){ if(!d.throws||!d.throws.length) return; out.push({tool:"jiao",kind:"draw",id:d.id,date:d.date,title:`🙏 ${d.throws.map(x=>JIAO_RES[x].name).join("・")}（${d.deity}）`,text:(d.question||"")+(d.note?"／"+d.note:""),fav:d.fav,page:"jiao"}); }
     else if(d.tool==="fortune"){ const f=FRT(d.cards[0].cardId); out.push({tool:"fortune",kind:"draw",id:d.id,date:d.date,title:`🧧 ${f.lv}・${f.name}`,text:f.all+(d.note?"／"+d.note:""),fav:d.fav,page:"fortune"}); } });
   S.cards.forEach(c=>{ const k=CARDS[c.idx]||CARDS[0]; out.push({tool:"fortune",kind:"legacy",id:c.date,date:c.date,title:`🧧 舊版籤・${k[0]}・${k[1]}`,text:k[2],page:"fortune"}); });
   st.affirmations.forEach(a=>out.push({tool:"affirm",kind:"aff",id:a.id,date:a.date,title:"💌 "+AFF(a.affId).t,text:a.feeling||"",fav:a.fav,page:"affirm"}));
@@ -3433,7 +3528,7 @@ function vRecords(){
   </div>`;
 }
 
-const STAR_PAGES={oracle:vOracle,fortune:vFortune,affirm:vAffirm,spread:vSpread,wishes:vWishes,vision:vVision,mjournal:vMJournal,gratitude:vGratitude,success:vSuccess,moon:vMoon,angel:vAngel,soul:vSoul,records:vRecords};
+const STAR_PAGES={jiao:vJiao,oracle:vOracle,fortune:vFortune,affirm:vAffirm,spread:vSpread,wishes:vWishes,vision:vVision,mjournal:vMJournal,gratitude:vGratitude,success:vSuccess,moon:vMoon,angel:vAngel,soul:vSoul,records:vRecords};
 
 /* ---------- 對話框：願望、成功紀錄、願景、月相 ---------- */
 async function compressImage(file){
@@ -3565,7 +3660,7 @@ function askDelete(msg, fn){ Sheet.ask("確定要刪除嗎？", msg||"刪除後�
 app.addEventListener("click", e=>{
   const t=e.target, T=D.today();
   const gs=t.closest("[data-gostar]"); if(gs){ goStar(gs.dataset.gostar==="home"?null:gs.dataset.gostar); return; }
-  const sp=t.closest("[data-sp]"); if(sp){ const p=sp.dataset.sp||null; if(sp.dataset.rtool) recTool=sp.dataset.rtool; if(p!=="oracle") oLast=null; animId=null; goStar(p); return; }
+  const sp=t.closest("[data-sp]"); if(sp){ const p=sp.dataset.sp||null; if(sp.dataset.rtool) recTool=sp.dataset.rtool; if(p!=="oracle") oLast=null; if(p==="jiao"&&jiaoSess){ const l=jiaoSess.throws[jiaoSess.throws.length-1]; if(jiaoSess.mode==="once"||l!=="sheng"||jiaoSess.throws.length>=3) jiaoSess=null; } animId=null; goStar(p); return; }
   if(tab!=="card" && !t.closest("[data-wnew],[data-wedit]")) return;
   const sg=t.closest('.seg[data-seg="oracle"] button'); if(sg){ oLast=null; animId=null; render(); return; }
   const sz=t.closest('.seg[data-seg="zod"] button'); if(sz){ zLog(sz.dataset.v); render(); return; }
