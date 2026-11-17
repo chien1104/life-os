@@ -1,0 +1,37 @@
+# 第 9 組：內容創作企劃板（版本 7）
+from playwright.sync_api import sync_playwright
+from pathlib import Path
+import sys, json
+HERE=Path(__file__).resolve().parent; OUT=HERE/'out'; OUT.mkdir(exist_ok=True)
+URL=HERE.parent.joinpath('index.html').as_uri()
+R=[]
+def ok(n,c,x=""): R.append(("PASS" if c else "FAIL")+"  "+n+("  ["+str(x)[:200]+"]" if not c else ""))
+with sync_playwright() as p:
+    b=p.chromium.launch(); pg=b.new_page(viewport={'width':390,'height':844},device_scale_factor=2); errs=[]; pg.on('pageerror',lambda e:errs.append(str(e)))
+    pg.goto(URL); pg.evaluate("localStorage.setItem('lifebox_v1', JSON.stringify({schemaVersion:6,todos:[],results:[],plans:[],cards:[],draft:'',settings:{welcomed:true},personalProfile:{entries:[{id:'p1',key:'喜歡的飲料',value:'可可',group:'飲食',createdAt:1}]}}))"); pg.reload(); pg.wait_for_timeout(300)
+    s=pg.evaluate("JSON.parse(localStorage.getItem('lifebox_v1'))")
+    ok("升級到版本 7，個人資料庫舊資料保留", s['schemaVersion']==7 and s['content']==[] and s['personalProfile']['entries'][0]['value']=="可可")
+    home=pg.inner_text('#app'); ok("首頁：個人資料庫換成內容創作企劃板", "內容創作企劃板" in home and "個人資料庫" not in home)
+    pg.click('.row[data-ghub=content]'); pg.click('[data-cnew]')
+    pg.fill('#cTitle','杜拜 3 天 2 夜開箱'); pg.select_option('#cPlat','Reels'); pg.fill('#cDate','2026-11-20'); pg.fill('#cHook','住過最貴的飯店值不值得？')
+    for x in ['飯店大廳空景','房間開箱']: pg.fill('#cShotNew',x); pg.click('[data-cshotadd]')
+    pg.locator('[data-cshot]').first.check(); pg.click('[data-csave]')
+    c=pg.evaluate("S.content")
+    ok("新增企劃：標題、平台、日期、拍攝清單", len(c)==1 and c[0]['platform']=="Reels" and c[0]['date']=="2026-11-20" and [x['done'] for x in c[0]['shots']]==[True,False], c)
+    ok("卡片顯示拍攝清單進度", "拍攝清單 1/2" in pg.inner_text('#app'))
+    pg.click('[data-cnext]'); ok("下一步：靈感 → 腳本", pg.evaluate("S.content[0].stage")=="script")
+    pg.click('[data-cf=script]'); ok("依階段篩選", pg.locator('.cplan').count()==1); pg.click('[data-cf=posted]'); ok("其他階段是空的", pg.locator('.cplan').count()==0); pg.click('[data-cf=all]')
+    pg.click('[data-cedit]'); pg.click('[data-ctask]'); pg.click('#sheet [data-opt="0"]')
+    t=pg.evaluate("S.todos.map(x=>[x.title,x.category,x.scheduledDate])"); ok("轉成待辦：內容創作、預計日期", t==[["杜拜 3 天 2 夜開箱","內容創作","2026-11-20"]] or (len(t)==1 and t[0][1]=="內容創作"), t)
+    pg.select_option('#cStage','posted'); pg.click('[data-csave]')
+    ok("改成已發布會自動記發布日", pg.evaluate("S.content[0].postedDate")!=None)
+    pg.click('[data-cedit]'); pg.fill('#cm_views','12345'); pg.fill('#cm_likes','678'); pg.click('[data-csave]')
+    ok("發布後可填成效", pg.evaluate("S.content[0].metrics")=={'views':12345,'likes':678}, pg.evaluate("S.content[0].metrics"))
+    ok("本月觀看統計", "12,345" in pg.inner_text('#app'))
+    pg.add_style_tag(content='#tabbar,.fab{display:none!important}'); pg.screenshot(path=str(OUT/'cb.png'),full_page=True)
+    pg.click('[data-cedit]'); pg.screenshot(path=str(OUT/'cs.png'),full_page=True); pg.click('[data-cdel]'); pg.click('#sheet [data-opt="0"]')
+    ok("刪除企劃（待辦保留）", pg.evaluate("[S.content.length,S.todos.length]")==[0,1])
+    pg.reload(); pg.wait_for_timeout(200); ok("重新整理後資料一致", pg.evaluate("[S.content.length,S.todos.length]")==[0,1])
+    ok("390px 不溢出", pg.evaluate("document.documentElement.scrollWidth")<=390)
+    ok("沒有程式錯誤", not errs, errs)
+print("\n".join(R)); print(sum(r.startswith("PASS") for r in R),"/",len(R))

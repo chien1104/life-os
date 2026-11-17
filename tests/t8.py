@@ -31,7 +31,7 @@ with sync_playwright() as p:
     pg.evaluate("Store.save && save()")
     ok("損壞資料：操作後仍不寫入", pg.evaluate("localStorage.getItem('lifebox_v1')")=="{壞掉的資料")
     pg.click('[data-lockopen]'); pg.click('#sheet [data-opt="2"]'); pg.click('#sheet [data-opt="0"]')
-    ok("確認「重新開始」後才寫入新資料", st(pg) and st(pg)['schemaVersion']==6 and pg.locator('.lockbar').count()==0)
+    ok("確認「重新開始」後才寫入新資料", st(pg) and st(pg)['schemaVersion']==7 and pg.locator('.lockbar').count()==0)
     ok("損壞情境沒有程式錯誤", not errs, errs); ctx.close()
     # ===== P0：升級前備份失敗 =====
     ctx=b.new_context(viewport={'width':390,'height':844},timezone_id='Asia/Taipei'); pg=ctx.new_page(); pg.clock.install(time=T0)
@@ -43,12 +43,12 @@ with sync_playwright() as p:
     # ===== 正常升級 v4 → v5 =====
     ctx,pg,errs=fresh(b,v4)
     s=st(pg)
-    ok("升級到版本 6，原資料完整保留", s['schemaVersion']==6 and len(s['todos'])==2 and len(s['wishlist'])==2 and s['cards']==v4['cards'])
+    ok("升級到版本 7，原資料完整保留", s['schemaVersion']==7 and len(s['todos'])==2 and len(s['wishlist'])==2 and s['cards']==v4['cards'])
     ok("「事業」任務合併到「工作與事業」，其他內容不變", [t['category'] for t in s['todos']]==["內容創作","工作與事業"] and s['todos'][1]['title']=="招募新夥伴" and s['todos'][1]['cat']=="工作與事業")
     cls=pg.evaluate("['下單可可奶茶','週末跟朋友聚餐','陪媽媽看醫生回家','開會準備提案','預約牙醫'].map(x=>Parser.classify(x).cat)")
     ok("新區塊自動分類：購物、朋友、家人、工作與事業", cls[:4]==["購物","朋友","家人","工作與事業"], cls)
     ok("待辦區塊共 8 個（工作與事業、購物、朋友、家人）", pg.evaluate("CATS.join()")=="工作與事業,內容創作,財務,學習,生活,購物,朋友,家人")
-    ok("升級前備份，原因寫明版本 4 → 6", any("版本 4 → 6" in x['reason'] and json.loads(x['data'])['schemaVersion']==4 for x in bks(pg)))
+    ok("升級前備份，原因寫明版本 4 → 7", any("版本 4 → 7" in x['reason'] and json.loads(x['data'])['schemaVersion']==4 for x in bks(pg)))
     ok("建立 star 資料區與個人亂數種子", isinstance(s['star']['draws'],list) and len(s['star']['profile']['seed'])>4)
     w1,w2=s['wishlist']
     ok("舊願望補上顯化欄位（分類對應）", w1['category']=="travel" and w1['mstatus']=="manifesting" and w1['desc']=="秋天" and w1['budget']==30000)

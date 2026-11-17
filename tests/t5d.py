@@ -20,7 +20,7 @@ with sync_playwright() as p:
     st=lambda: pg.evaluate("JSON.parse(localStorage.getItem('lifebox_v1'))")
     bks=lambda: pg.evaluate("JSON.parse(localStorage.getItem('lifebox_v1_backups')||'[]')")
     s=st()
-    ok("第一階段資料升級到版本 6，待辦完整保留", s['schemaVersion']==6 and len(s['todos'])==2 and s['todos'][0]['sortOrder']==1)
+    ok("第一階段資料升級到版本 7，待辦完整保留", s['schemaVersion']==7 and len(s['todos'])==2 and s['todos'][0]['sortOrder']==1)
     ok("升級前自動備份第一階段資料", len([b for b in bks() if '升級' in b['reason']])==1 and json.loads([b for b in bks() if '升級' in b['reason']][0]['data'])['schemaVersion']==2)
     ok("新增的資料區都建立好（空的）", all(isinstance(s.get(k),list) for k in ["habits","habitRecords","moodRecords","journalEntries","reviews","goals","wishlist"]) and s['personalProfile']=={"entries":[]})
     ok("底部導覽維持 5 個（成長已合併到首頁）", [x.inner_text().strip().split(chr(10))[0] for x in pg.locator('#tabbar button').all()]==["今日","收集","待辦","安排","星光秘境"], [x.inner_text().strip() for x in pg.locator('#tabbar button').all()])
@@ -134,30 +134,23 @@ with sync_playwright() as p:
     pg.click('[data-wt="travel"]')
     ok("依類型篩選", pg.locator('#app .list > .item').count()==1)
     pg.click('[data-wt="全部"]'); pg.screenshot(path=str(OUT/'g_wish.png'),full_page=True)
-    # ---- 個人資料庫 ----
-    pg.click('.back[data-ghub=""]'); pg.click('.row[data-ghub=profile]')
-    pg.fill('#pKey','最有精神的時段'); pg.fill('#pVal','早上 9～11 點'); pg.click('#gAddProfile')
-    ok("新增個人偏好，記錄來源", st()['personalProfile']['entries'][0]['source']=="自己填寫")
-    pg.fill('#pKey','網銀密碼'); pg.fill('#pVal','abc123'); pg.click('#gAddProfile')
-    ok("敏感資料（密碼）會被擋下，不儲存", len(st()['personalProfile']['entries'])==1)
-    pg.click('[data-opt="0"]')
-    pg.fill('#pKey','身分'); pg.fill('#pVal','A123456789'); pg.click('#gAddProfile')
-    ok("長串數字（像證件號）也會被擋下", len(st()['personalProfile']['entries'])==1); pg.click('[data-opt="0"]')
-    eid=st()['personalProfile']['entries'][0]['id']; pg.click(f'[data-gpedit="{eid}"]'); pg.fill('#epVal','早上 8～11 點'); pg.click('[data-gact=profileSave]')
-    ok("可以修改", st()['personalProfile']['entries'][0]['value']=="早上 8～11 點")
-    pg.screenshot(path=str(OUT/'g_profile.png'),full_page=True)
+    # ---- 個人資料庫已換成內容創作企劃板（舊資料保留） ----
+    pg.click('.back[data-ghub=""]')
+    ok("首頁沒有個人資料庫入口", pg.locator('.row[data-ghub=profile]').count()==0)
+    ok("改成內容創作企劃板入口", pg.locator('.row[data-ghub=content]').count()==1)
+    ok("個人資料庫的資料欄位仍保留", isinstance(st()['personalProfile']['entries'], list))
     # ---- 備份涵蓋第二階段 ----
     pg.click('#btnSettings')
     with pg.expect_download() as dl: pg.click('[data-act=export]')
     exp=json.load(open(dl.value.path(),encoding='utf-8'))['data']
-    ok("匯出包含所有第二階段資料", all(len(exp[k])>0 for k in ["habits","habitRecords","moodRecords","journalEntries","reviews","goals","wishlist"]) and len(exp['personalProfile']['entries'])==1)
+    ok("匯出包含所有第二階段資料", all(len(exp[k])>0 for k in ["habits","habitRecords","moodRecords","journalEntries","reviews","goals","wishlist"]) and 'personalProfile' in exp and 'content' in exp)
     before=st()
     pg.set_input_files('#importFile',dl.value.path()); pg.wait_for_selector('[data-opt]'); pg.click('[data-opt="0"]')
     after=st()
-    ok("匯入合併不會產生重複", all(len(after[k])==len(before[k]) for k in ["todos","habits","habitRecords","moodRecords","journalEntries","reviews","goals","wishlist"]) and len(after['personalProfile']['entries'])==1)
+    ok("匯入合併不會產生重複", all(len(after[k])==len(before[k]) for k in ["todos","habits","habitRecords","moodRecords","journalEntries","reviews","goals","wishlist"]) and len(after['personalProfile']['entries'])==len(before['personalProfile']['entries']))
     # ---- 畫面 ----
     pg.click('[data-tab=home]')
-    for k in ["","habit","mood","review","goal","wish","profile"]:
+    for k in ["","habit","mood","review","goal","wish","content"]:
         if k: pg.click(f'[data-ghub={k}]')
         ow=pg.evaluate("document.documentElement.scrollWidth-window.innerWidth")
         ok(f"成長/{k or '首頁'} 沒有左右溢出", ow<=0, ow)

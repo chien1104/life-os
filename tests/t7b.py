@@ -9,7 +9,7 @@ def ok(n,c,extra=""): R.append(("PASS" if c else "FAIL")+"  "+n+(("  ["+str(extr
 TZ=datetime.timezone(datetime.timedelta(hours=8))
 T0=datetime.datetime(2026,11,13,9,0,tzinfo=TZ)
 PAGES=[("home",None),("collect",None),("todo",None),("plan",None),("card",None)]
-HUBS=["habit","mood","review","goal","wish","profile","fin","kb","report","reward"]
+HUBS=["habit","mood","review","goal","wish","content","fin","kb","report","reward"]
 with sync_playwright() as p:
     b=p.chromium.launch()
     for label,mock in [("一般網址",False),("Claude 環境",True)]:

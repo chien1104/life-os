@@ -17,7 +17,7 @@ with sync_playwright() as p:
     st=lambda: pg.evaluate("JSON.parse(localStorage.getItem('lifebox_v1'))")
     bks=lambda: pg.evaluate("JSON.parse(localStorage.getItem('lifebox_v1_backups')||'[]')")
     def hubgo(k): pg.click('[data-tab=home]'); pg.click(f'.row[data-ghub={k}]')
-    s=st(); ok("新資料版本 6，財務／第二大腦／獎勵／設定都建立", s['schemaVersion']==6 and s['fin']=={"accounts":[],"tx":[],"budgets":[],"savings":[]} and s['knowledge']==[] and 'rules' in s['reward'] and 'home' in s['settings'])
+    s=st(); ok("新資料版本 7，財務／第二大腦／獎勵／設定都建立", s['schemaVersion']==7 and s['fin']=={"accounts":[],"tx":[],"budgets":[],"savings":[]} and s['knowledge']==[] and 'rules' in s['reward'] and 'home' in s['settings'])
     # ===== 上個月：存一筆韓國餐廳（給搜尋測試用） =====
     hubgo('kb'); pg.click('#kNew'); pg.fill('#kTitle','首爾烤肉餐廳'); pg.fill('#kContent','弘大附近，排隊要早點去 #韓國 #餐廳')
     ok("第二大腦依內容自動建議類型（旅遊）", pg.input_value('#kType')=="旅遊")
