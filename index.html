@@ -709,6 +709,7 @@ const D = {
 const KEY = "lifebox_v1";             // 不更改，舊資料持續可用
 const BK_KEY = "lifebox_v1_backups";  // 本機自動備份（最多 8 份）
 const SCHEMA = 6;
+const IS_STANDALONE=(()=>{ try{ return navigator.standalone===true || matchMedia("(display-mode: standalone)").matches; }catch(e){ return false; } })();
 const Store = {
   load(){
     let raw=null, d=null;
@@ -1360,7 +1361,7 @@ const Backup = {
     const payload={app:"Life OS 生活整理工具箱", exportedAt:new Date().toISOString(), schemaVersion:SCHEMA, data:S};
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
     const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`LifeOS備份_${D.today()}.json`;
-    document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
+    a.target="_blank"; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },60000);
     toast("已匯出備份檔");
   },
   read(text){
@@ -2651,8 +2652,12 @@ async function offerFile(name, data){
     catch(e){ const c=e&&e.code; if(c==="declined") return false; toast(c==="rejected_extension"?"這種檔案格式在 Claude 裡無法下載":c==="rate_limited"?"請稍後再試一次":"下載沒有成功"); return false; }
   }
   const blob=data instanceof Blob?data:new Blob([data],{type:"application/json"});
-  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name;
-  document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500); return true;
+  // 從主畫面打開（iPhone）時，用分享選單存檔，避免整個 App 被換成檔案頁面
+  if(IS_STANDALONE){ try{ const file=new File([blob],name,{type:blob.type||"application/octet-stream"});
+    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:name}); return true; } }
+    catch(e){ if(e && e.name==="AbortError") return false; } }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.target="_blank"; a.rel="noopener";
+  document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },60000); return true;
 }
 /* 匯出時連同圖片與文件一起打包；匯入時寫回 IndexedDB */
 const blobToDataUrl=b=>new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(b); });
@@ -3850,6 +3855,15 @@ render();
 booted=true;
 if(Store.locked) Sheet.lock();
 maybeWelcome();
+/* 從主畫面打開時：從左邊緣往右滑＝App 裡的「返回」，不會滑出 App */
+function inAppBack(){
+  if($("sheet").classList.contains("show")){ Sheet.close(); return; }
+  if(tab==="card" && starPage){ goStar(null); return; }
+  if(hub){ go("home"); return; }
+  if(tab!=="home") go("home");
+}
+if(IS_STANDALONE){ try{ history.replaceState({lifeos:0},""); history.pushState({lifeos:1},"");
+  window.addEventListener("popstate", ()=>{ inAppBack(); history.pushState({lifeos:1},""); }); }catch(e){} }
 /* 離線使用：只在一般網址（https）註冊，Claude 預覽或本機檔案不註冊 */
 try{ if("serviceWorker" in navigator && location.protocol==="https:" && window.top===window.self) navigator.serviceWorker.register("sw.js").catch(()=>{}); }catch(e){}
 
