@@ -143,6 +143,17 @@ with sync_playwright() as p:
         if pg2.evaluate("[affToday().id,oracleFor(D.today()).id,fortuneFor(D.today()).id].join()")!=",".join([affA,oA,fA]): diffs+=1
         ctx.close()
     ok("不同人：每日內容隨機（6 人中至少 5 人不同）", diffs>=5, diffs)
+    # ===== 顯化日記：隨心許願 =====
+    ctx,pg,errs=fresh(b,v4); pg.evaluate("goStar('mjournal')")
+    ok("顯化日記預設是依提示寫", "今天的寫作提示" in pg.inner_text('#app'))
+    pg.click('.seg[data-seg=mj] button[data-v=free]')
+    ok("切到隨心許願：不顯示題目", "隨心許願" in pg.inner_text('#app') and "今天的寫作提示" not in pg.inner_text('#app'))
+    pg.fill('#mjText','我希望明年去冰島看極光'); pg.click('[data-mjsave]')
+    e=pg.evaluate("S.star.manifestJournal")
+    ok("隨心許願可儲存，不需要題目", len(e)==1 and e[0]['free'] and e[0]['promptId'] is None and e[0]['text']=="我希望明年去冰島看極光", e)
+    pg.evaluate("goStar('records')"); ok("探索紀錄顯示隨心許願", "🌈 隨心許願" in pg.inner_text('#app'))
+    ok("隨心許願沒有程式錯誤", not errs, errs)
+    ctx.close()
     # ===== 擲杯問神明 =====
     ctx,pg,errs=fresh(b,v4)
     pg.click('[data-tab=card]'); ok("星光秘境首頁有擲杯入口", pg.locator('.stool[data-sp=jiao]').count()==1)

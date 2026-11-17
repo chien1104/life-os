@@ -30,7 +30,7 @@ pip install playwright && python -m playwright install chromium
 cd tests && npm install        # 月相比對用的 astronomy-engine
 python t4d.py && python t5d.py && python t6e.py && python t7b.py && python t8.py
 ```
-每次修改後全部跑過；目前共 236 項全部通過（t7b 改為「確認沒有 AI 與雲端同步」）。改版面時用 390px 與 360px 寬度截圖檢查。
+每次修改後全部跑過；目前共 241 項全部通過（t7b 改為「確認沒有 AI 與雲端同步」）。改版面時用 390px 與 360px 寬度截圖檢查。
 
 ## 發布
 靜態網站（Netlify 或 GitHub Pages），`index.html` 放在根目錄。

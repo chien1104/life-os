@@ -3360,17 +3360,19 @@ function vVision(){
 /* ---------- ✍️ 顯化日記 ---------- */
 function vMJournal(){
   const T=D.today(), base=Math.floor(srng("mj|"+T)()*MANIFEST_PROMPTS.length), pr=MANIFEST_PROMPTS[(base+mjPromptIdx)%MANIFEST_PROMPTS.length];
-  const q=mjQ.trim().toLowerCase();
+  const q=mjQ.trim().toLowerCase(), free=sub.mj==="free";
   const list=S.star.manifestJournal.filter(e=>(!mjDate||e.date===mjDate)&&(!q||e.text.toLowerCase().includes(q))).sort((a,b)=>b.at-a.at);
   return shero("✍️","用文字，先走進願望實現的那一天。","顯化日記") + `<div class="body sbody">
-    <div class="scard"><div class="sk">今天的寫作提示</div><p class="prompt">「${pr.t}」</p><button class="btn small sghost" data-mjnext="1">換一個提示</button>
-      <textarea id="mjText" style="margin-top:12px" placeholder="慢慢寫，不需要完美…"></textarea>
+    ${seg("mj",[["prompt","✍️ 依提示寫"],["free","🌈 隨心許願"]])}
+    <div class="scard" style="margin-top:12px">${free?`<div class="sk">🌈 隨心許願</div><p class="muted2" style="margin:4px 0 0">不用照題目，想許什麼願、想對宇宙說什麼，都可以直接寫下來。</p>
+      <textarea id="mjText" style="margin-top:12px" placeholder="我希望……／我已經擁有……／謝謝宇宙讓我……"></textarea>`:`<div class="sk">今天的寫作提示</div><p class="prompt">「${pr.t}」</p><button class="btn small sghost" data-mjnext="1">換一個提示</button>
+      <textarea id="mjText" style="margin-top:12px" placeholder="慢慢寫，不需要完美…"></textarea>`}
       <div class="hrow" style="margin-top:10px;flex-wrap:nowrap"><select id="mjWish" aria-label="連結願望"><option value="">不連結願望</option>${S.wishlist.filter(w=>w.mstatus!=="achieved").map(w=>`<option value="${w.id}">🌠 ${esc(w.title)}</option>`).join("")}</select>
-      <button class="btn sgold" data-mjsave="${pr.id}" style="white-space:nowrap">儲存</button></div></div>
+      <button class="btn sgold" data-mjsave="${free?"free":pr.id}" style="white-space:nowrap">${free?"許願":"儲存"}</button></div></div>
     <div class="ssec">我的顯化日記</div>
     <div class="grid2"><input type="date" id="mjDate" value="${mjDate}" aria-label="依日期篩選"><input id="mjQ" placeholder="搜尋內容" value="${esc(mjQ)}" aria-label="搜尋"></div>
     <div style="margin-top:12px">${list.length?list.map(e=>{ const w=e.wishId&&S.wishlist.find(x=>x.id===e.wishId); return `<div class="scard jent"><div class="hrow" style="justify-content:space-between"><b>${D.label(e.date)}</b><span><button class="del sdel" data-mjfav="${e.id}" aria-label="收藏">${e.fav?"♥":"♡"}</button><button class="del sdel" data-mjdel="${e.id}" aria-label="刪除">${ic("x")}</button></span></div>
-      <p class="muted2">「${(MANIFEST_PROMPTS.find(p=>p.id===e.promptId)||{t:""}).t}」</p><p class="jtext">${esc(e.text)}</p>${w?`<span class="stag">🌠 ${esc(w.title)}</span>`:""}</div>`; }).join(""):`<div class="scard"><p class="muted2" style="margin:0">${q||mjDate?"沒有找到相關日記。":"還沒有顯化日記。"}</p></div>`}</div>
+      ${e.free?`<span class="stag">🌈 隨心許願</span>`:`<p class="muted2">「${(MANIFEST_PROMPTS.find(p=>p.id===e.promptId)||{t:""}).t}」</p>`}<p class="jtext">${esc(e.text)}</p>${w?`<span class="stag">🌠 ${esc(w.title)}</span>`:""}</div>`; }).join(""):`<div class="scard"><p class="muted2" style="margin:0">${q||mjDate?"沒有找到相關日記。":"還沒有顯化日記。"}</p></div>`}</div>
   </div>`;
 }
 
@@ -3507,7 +3509,7 @@ function recItems(){
   st.affirmations.forEach(a=>out.push({tool:"affirm",kind:"aff",id:a.id,date:a.date,title:"💌 "+AFF(a.affId).t,text:a.feeling||"",fav:a.fav,page:"affirm"}));
   if(false) st.horoscopeLog.forEach(h=>{ const z=zByKey(h.sign); out.push({tool:"zodiac",kind:"zod",id:h.id,date:h.date,title:`${z?z.sym:"♈"} ${z?z.name:""}・${{day:"今日",week:"本週",month:"本月"}[h.period]}`,text:h.textSnapshot,page:"zodiac"}); });
   st.moonJournal.forEach(j=>out.push({tool:"moon",kind:"moon",id:j.id,date:j.date,title:`${MOON_THEMES[j.phase]?.e||"🌙"} 月相紀錄`,text:[j.intention,j.release,j.text].filter(Boolean).join("／"),page:"moon"}));
-  st.manifestJournal.forEach(e=>out.push({tool:"mj",kind:"mj",id:e.id,date:e.date,title:"✍️ 顯化日記",text:e.text,fav:e.fav,page:"mjournal"}));
+  st.manifestJournal.forEach(e=>out.push({tool:"mj",kind:"mj",id:e.id,date:e.date,title:e.free?"🌈 隨心許願":"✍️ 顯化日記",text:e.text,fav:e.fav,page:"mjournal"}));
   st.gratitude.forEach(g=>out.push({tool:"grat",kind:"grat",id:g.id,date:g.date,title:`🤎 感恩日記${g.moodTag?"・"+g.moodTag:""}`,text:[...g.items,...g.extra].filter(Boolean).join("、"),page:"gratitude"}));
   st.soulQA.forEach(s=>out.push({tool:"soul",kind:"soul",id:s.id,date:s.date,title:"🪞 "+SQ(s.questionId).t,text:s.answer,fav:s.fav,page:"soul"}));
   st.angelNumbers.forEach(a=>out.push({tool:"angel",kind:"angel",id:a.id,date:a.date,title:`🔢 ${a.number}`,text:[a.context,a.mood].filter(Boolean).join("・"),page:"angel"}));
@@ -3692,7 +3694,7 @@ app.addEventListener("click", e=>{
   const ve=t.closest("[data-vedit]"); if(ve){ Sheet.visionEdit(ve.dataset.vedit); return; }
   // 顯化日記
   if(t.closest("[data-mjnext]")){ mjPromptIdx++; render(); return; }
-  const mjs=t.closest("[data-mjsave]"); if(mjs){ const tx=$("mjText").value.trim(); if(!tx){ toast("先寫一點內容"); return; } S.star.manifestJournal.push({id:uid(),date:T,promptId:mjs.dataset.mjsave,text:tx,wishId:$("mjWish").value||null,fav:false,tags:[],at:Date.now()}); save(); render(); toast("已儲存"); return; }
+  const mjs=t.closest("[data-mjsave]"); if(mjs){ const tx=$("mjText").value.trim(); if(!tx){ toast("先寫一點內容"); return; } const fr=mjs.dataset.mjsave==="free"; S.star.manifestJournal.push({id:uid(),date:T,promptId:fr?null:mjs.dataset.mjsave,free:fr,text:tx,wishId:$("mjWish").value||null,fav:false,tags:[],at:Date.now()}); save(); render(); toast(fr?"🌈 願望已寫下":"已儲存"); return; }
   const mjf=t.closest("[data-mjfav]"); if(mjf){ recFavToggle("mj",mjf.dataset.mjfav); return; }
   const mjd=t.closest("[data-mjdel]"); if(mjd){ const id=mjd.dataset.mjdel; askDelete(null,()=>{ recDelete("mj",id); save(); render(); }); return; }
   // 感恩
