@@ -68,6 +68,10 @@
 3. **使用說明文件、商品頁文案**：還沒做。
 4. 收款平台的參考選項有 Portaly（台灣電子發票、TWD）、Gumroad，還沒決定。稅務與授權條款建議請教專業人士。
 
+## 分享版「🌻生活工具檯」
+- 另一個 repo：chien1104/life-tools（https://chien1104.github.io/life-tools/），每頁最下方只顯示 @Chien1104。
+- 不要手改分享版：改完這裡的 index.html 後，執行 `python tools/build_share.py ../life-tools` 產生分享版，再到 life-tools 提交推送。
+
 ## 5. 改版流程
 
 1. 改 `index.html`（照 `CLAUDE.md` 的規則）。
